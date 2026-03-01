@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PLINIUS: MEMORY RAID</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04040a;
+      --bg-panel: #08080f;
+      --bg-card: #0e0e1c;
+      --bg-card2: #13132a;
+      --cyan: #00e5ff;
+      --cyan-glow: rgba(0,229,255,0.15);
+      --orange: #ff6a00;
+      --orange-glow: rgba(255,106,0,0.15);
+      --gold: #ffd700;
+      --gold-glow: rgba(255,215,0,0.15);
+      --red: #ff2244;
+      --red-glow: rgba(255,34,68,0.2);
+      --green: #00ff88;
+      --green-glow: rgba(0,255,136,0.15);
+      --purple: #9b30ff;
+      --magenta: #ff00cc;
+      --text: #c0c0e0;
+      --text-bright: #e8e8ff;
+      --text-dim: #404068;
+      --text-muted: #7070a0;
+      --border: #12122a;
+      --border-bright: #1e1e40;
+      --font-head: 'Orbitron', monospace;
+      --font-body: 'Exo 2', sans-serif;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+
+    /* SCANLINES */
+    body::after {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px);
+      pointer-events: none; z-index: 9999;
+    }
+
+    /* PARTICLE BACKGROUND */
+    #bg-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.4; }
+
+    /* SCREENS */
+    .screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ═══ HEADER HUD ═══ */
+    #hud {
+      position: sticky; top: 0; z-index: 100;
+      background: linear-gradient(180deg, var(--bg-panel) 0%, transparent 100%);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    #hud-xp-bar { flex: 1; height: 6px; background: var(--border-bright); border-radius: 3px; overflow: hidden; }
+    #hud-xp-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple)); border-radius: 3px; transition: width 0.6s cubic-bezier(.2,1,.3,1); }
+    #hud-xp-text { font-family: var(--font-head); font-size: 11px; color: var(--cyan); min-width: 70px; }
+    #hud-level { font-family: var(--font-head); font-size: 11px; color: var(--gold); background: var(--gold-glow); border: 1px solid rgba(255,215,0,0.3); padding: 2px 8px; border-radius: 4px; }
+    #hud-combo { font-family: var(--font-head); font-size: 13px; color: var(--orange); transition: all 0.3s; min-width: 60px; text-align: right; }
+    #hud-combo.pulse { animation: combo-pulse 0.4s ease; }
+    @keyframes combo-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+    /* ═══ HOME SCREEN ═══ */
+    #home-screen { padding: 20px 16px 40px; }
+    .logo-block { text-align: center; padding: 40px 0 30px; }
+    .logo-main {
+      font-family: var(--font-head); font-size: clamp(28px,8vw,52px); font-weight: 900;
+      color: var(--cyan); letter-spacing: 4px;
+      text-shadow: 0 0 30px var(--cyan), 0 0 60px rgba(0,229,255,0.3);
+      line-height: 1; margin-bottom: 8px;
+    }
+    .logo-sub {
+      font-family: var(--font-head); font-size: clamp(10px,3vw,14px); font-weight: 400;
+      color: var(--text-muted); letter-spacing: 6px; text-transform: uppercase;
+    }
+    .logo-tagline {
+      font-size: 13px; color: var(--text-dim); margin-top: 12px; font-style: italic;
+    }
+
+    .section-title {
+      font-family: var(--font-head); font-size: 12px; letter-spacing: 4px; color: var(--text-dim);
+      text-transform: uppercase; margin: 24px 0 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::before, .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border-bright); }
+
+    /* DUNGEON CARDS */
+    .dungeon-grid { display: flex; flex-direction: column; gap: 10px; }
+    .dungeon-card {
+      background: var(--bg-card); border: 1px solid var(--border-bright);
+      border-radius: var(--radius); padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+      -webkit-user-select: none; user-select: none;
+    }
+    .dungeon-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--cyan); border-radius: 3px 0 0 3px;
+      opacity: 0; transition: opacity 0.25s;
+    }
+    .dungeon-card:hover::before, .dungeon-card.active-dungeon::before { opacity: 1; }
+    .dungeon-card:hover { border-color: var(--cyan); background: var(--bg-card2); transform: translateX(4px); }
+    .dungeon-card.locked { opacity: 0.4; cursor: not-allowed; }
+    .dungeon-card.locked:hover { transform: none; border-color: var(--border-bright); background: var(--bg-card); }
+    .dungeon-emoji { font-size: 28px; min-width: 40px; text-align: center; }
+    .dungeon-info { flex: 1; }
+    .dungeon-title { font-family: var(--font-head); font-size: 12px; color: var(--cyan); letter-spacing: 1px; }
+    .dungeon-subtitle { font-size: 13px; color: var(--text); margin-top: 3px; }
+    .dungeon-progress { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .dungeon-progress-bar { flex: 1; height: 3px; background: var(--border-bright); border-radius: 2px; overflow: hidden; max-width: 120px; }
+    .dungeon-progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s; }
+    .dungeon-pct { font-size: 11px; color: var(--text-dim); font-family: var(--font-head); }
+    .dungeon-lock { font-size: 18px; }
+    .dungeon-card.selected-dungeon { border-color: var(--cyan); background: var(--bg-card2); box-shadow: 0 0 20px var(--cyan-glow); }
+
+    /* START BUTTON */
+    #start-btn {
+      display: block; width: 100%; margin-top: 28px;
+      background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(155,48,255,0.15));
+      border: 1px solid var(--cyan); border-radius: var(--radius);
+      padding: 16px; font-family: var(--font-head); font-size: 16px; letter-spacing: 3px;
+      color: var(--cyan); cursor: pointer; transition: all 0.25s;
+      text-shadow: 0 0 10px var(--cyan); text-transform: uppercase;
+    }
+    #start-btn:hover { background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(155,48,255,0.25)); box-shadow: 0 0 30px var(--cyan-glow), 0 0 60px rgba(0,229,255,0.1); transform: translateY(-2px); }
+    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 10px; text-align: center;
+    }
+    .stat-value { font-family: var(--font-head); font-size: 22px; font-weight: 700; }
+    .stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+    /* ═══ MODE SCREEN ═══ */
+    #mode-screen { padding: 16px; }
+    .mode-header { text-align: center; padding: 20px 0 10px; }
+    .mode-dungeon-name { font-family: var(--font-head); font-size: 18px; color: var(--orange); text-shadow: 0 0 20px var(--orange); }
+    .mode-dungeon-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 2px; }
+
+    .modes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .mode-card {
+      background: var(--bg-card); border: 1px solid var(--border-bright); border-radius: var(--radius);
+      padding: 20px 14px; cursor: pointer; transition: all 0.25s;
+      text-align: center; position: relative; overflow: hidden;
+      -webkit-user-select: none; user-select: none;
+    }
+    .mode-card:hover { transform: translateY(-4px); }
+    .mode-card .mode-icon { font-size: 36px; margin-bottom: 10px; }
+    .mode-card .mode-name { font-family: var(--font-head); font-size: 11px; letter-spacing: 2px; margin-bottom: 6px; }
+    .mode-card .mode-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+    .mode-card .mode-xp { position: absolute; top: 8px; right: 8px; font-family: var(--font-head); font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+
+    .mode-card.echo-mode { border-color: rgba(0,229,255,0.4); }
+    .mode-card.echo-mode:hover { border-color: var(--cyan); box-shadow: 0 8px 32px var(--cyan-glow); }
+    .mode-card.echo-mode .mode-name { color: var(--cyan); }
+    .mode-card.echo-mode .mode-xp { background: var(--cyan-glow); color: var(--cyan); border: 1px solid rgba(0,229,255,0.3); }
+
+    .mode-card.hunt-mode { border-color: rgba(155,48,255,0.4); }
+    .mode-card.hunt-mode:hover { border-color: var(--purple); box-shadow: 0 8px 32px rgba(155,48,255,0.2); }
+    .mode-card.hunt-mode .mode-name { color: var(--purple); }
+    .mode-card.hunt-mode .mode-xp { background: rgba(155,48,255,0.15); color: var(--purple); border: 1px solid rgba(155,48,255,0.3); }
+
+    .mode-card.speedrun-mode { border-color: rgba(255,106,0,0.4); }
+    .mode-card.speedrun-mode:hover { border-color: var(--orange); box-shadow: 0 8px 32px var(--orange-glow); }
+    .mode-card.speedrun-mode .mode-name { color: var(--orange); }
+    .mode-card.speedrun-mode .mode-xp { background: var(--orange-glow); color: var(--orange); border: 1px solid rgba(255,106,0,0.3); }
+
+    .mode-card.boss-mode { border-color: rgba(255,34,68,0.4); grid-column: span 2; }
+    .mode-card.boss-mode:hover { border-color: var(--red); box-shadow: 0 8px 32px var(--red-glow); }
+    .mode-card.boss-mode .mode-name { color: var(--red); }
+    .mode-card.boss-mode .mode-xp { background: var(--red-glow); color: var(--red); border: 1px solid rgba(255,34,68,0.3); }
+    .mode-card.boss-mode .mode-icon { font-size: 44px; }
+
+    .back-btn {
+      background: none; border: 1px solid var(--border-bright); border-radius: var(--radius);
+      color: var(--text-muted); font-family: var(--font-body); font-size: 13px;
+      padding: 10px 20px; cursor: pointer; transition: all 0.2s; margin-top: 20px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .back-btn:hover { border-color: var(--text-muted); color: var(--text); }
+
+    /* ═══ GAME SCREEN ═══ */
+    #game-screen { padding: 0 16px 80px; }
+    .game-header { padding: 16px 0 12px; display: flex; align-items: center; justify-content: space-between; }
+    .game-mode-badge {
+      font-family: var(--font-head); font-size: 10px; letter-spacing: 3px; padding: 4px 10px;
+      border-radius: 4px; text-transform: uppercase;
+    }
+    .game-sentence-counter { font-size: 11px; color: var(--text-muted); }
+
+    /* TIMER */
+    #timer-display {
+      text-align: center; font-family: var(--font-head); font-size: 48px; font-weight: 900;
+      transition: color 0.3s; padding: 10px;
+    }
+    #timer-display.urgent { color: var(--red); text-shadow: 0 0 20px var(--red); animation: tick 1s infinite; }
+    #timer-display.normal { color: var(--cyan); text-shadow: 0 0 20px var(--cyan); }
+    @keyframes tick { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+
+    /* LATIN SENTENCE DISPLAY */
+    .latin-display {
+      background: var(--bg-card); border: 1px solid var(--border-bright);
+      border-radius: var(--radius); padding: 20px 16px; margin: 12px 0;
+      font-size: clamp(15px,4vw,19px); color: var(--text-bright); line-height: 1.7;
+      font-style: italic; letter-spacing: 0.3px;
+      transition: all 0.3s;
+    }
+    .latin-display.flash-correct { border-color: var(--green); box-shadow: 0 0 20px var(--green-glow); animation: flash-green 0.5s; }
+    .latin-display.flash-wrong { border-color: var(--red); box-shadow: 0 0 20px var(--red-glow); animation: flash-red 0.5s; }
+    @keyframes flash-green { 0%,100%{background:var(--bg-card)} 50%{background:rgba(0,255,136,0.08)} }
+    @keyframes flash-red { 0%,100%{background:var(--bg-card)} 50%{background:rgba(255,34,68,0.08)} }
+
+    .german-display {
+      background: rgba(0,229,255,0.04); border: 1px dashed rgba(0,229,255,0.2);
+      border-radius: var(--radius); padding: 12px 16px; margin: 8px 0;
+      font-size: 13px; color: var(--cyan-dim); line-height: 1.6; font-style: italic;
+    }
+
+    /* WORD CHIPS for Construction Hunt */
+    .word-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 16px 0; }
+    .word-chip {
+      background: var(--bg-card2); border: 1px solid var(--border-bright);
+      border-radius: 4px; padding: 6px 10px; font-size: 14px; font-style: italic;
+      cursor: pointer; transition: all 0.2s; -webkit-user-select: none; user-select: none;
+      color: var(--text-bright);
+    }
+    .word-chip:hover { border-color: var(--purple); background: rgba(155,48,255,0.1); }
+    .word-chip.selected { background: rgba(155,48,255,0.2); border-color: var(--purple); color: white; box-shadow: 0 0 8px rgba(155,48,255,0.3); }
+    .word-chip.correct-word { background: rgba(0,255,136,0.15); border-color: var(--green); color: var(--green); }
+    .word-chip.wrong-word { background: rgba(255,34,68,0.15); border-color: var(--red); color: var(--red); }
+    .word-chip.target-word { background: rgba(0,229,255,0.15); border-color: var(--cyan); color: var(--cyan); animation: pulse-word 1.5s infinite; }
+    @keyframes pulse-word { 0%,100%{box-shadow: 0 0 4px rgba(0,229,255,0.3)} 50%{box-shadow: 0 0 12px rgba(0,229,255,0.6)} }
+
+    /* CONSTRUCTION QUESTION */
+    .construction-question {
+      background: linear-gradient(135deg, rgba(155,48,255,0.1), rgba(0,229,255,0.05));
+      border: 1px solid rgba(155,48,255,0.3); border-radius: var(--radius);
+      padding: 16px; margin: 12px 0; text-align: center;
+    }
+    .construction-question .q-label { font-size: 11px; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+    .construction-question .q-type { font-family: var(--font-head); font-size: 18px; color: var(--purple); text-shadow: 0 0 15px rgba(155,48,255,0.5); }
+
+    /* MULTIPLE CHOICE */
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .choice-btn {
+      background: var(--bg-card); border: 1px solid var(--border-bright); border-radius: var(--radius);
+      padding: 12px 10px; font-family: var(--font-body); font-size: 12px; color: var(--text);
+      cursor: pointer; transition: all 0.2s; text-align: center; line-height: 1.4;
+      -webkit-user-select: none; user-select: none;
+    }
+    .choice-btn:hover { border-color: var(--purple); background: rgba(155,48,255,0.1); }
+    .choice-btn.correct { background: rgba(0,255,136,0.15); border-color: var(--green); color: var(--green); pointer-events: none; }
+    .choice-btn.wrong { background: rgba(255,34,68,0.1); border-color: var(--red); color: var(--red); pointer-events: none; }
+    .choice-btn.reveal { background: rgba(0,255,136,0.08); border-color: rgba(0,255,136,0.3); pointer-events: none; }
+    .choice-btn:disabled { pointer-events: none; }
+
+    /* TEXTAREA INPUT */
+    .game-input {
+      width: 100%; background: var(--bg-card2); border: 1px solid var(--border-bright);
+      border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-body);
+      font-size: 15px; color: var(--text-bright); outline: none; resize: none;
+      min-height: 90px; transition: border-color 0.2s; line-height: 1.6;
+      margin: 10px 0;
+    }
+    .game-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,0.1); }
+    .game-input.correct-input { border-color: var(--green); }
+    .game-input.wrong-input { border-color: var(--red); }
+
+    /* BUTTONS */
+    .btn-primary {
+      display: block; width: 100%; background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(0,229,255,0.1));
+      border: 1px solid var(--cyan); border-radius: var(--radius); padding: 14px;
+      font-family: var(--font-head); font-size: 13px; letter-spacing: 2px; color: var(--cyan);
+      cursor: pointer; transition: all 0.25s; text-transform: uppercase; margin: 8px 0;
+    }
+    .btn-primary:hover { background: rgba(0,229,255,0.3); box-shadow: 0 0 20px var(--cyan-glow); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      display: block; width: 100%; background: var(--bg-card); border: 1px solid var(--border-bright);
+      border-radius: var(--radius); padding: 12px; font-family: var(--font-head);
+      font-size: 12px; letter-spacing: 2px; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; text-transform: uppercase; margin: 6px 0;
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+
+    .btn-danger {
+      display: block; width: 100%; background: linear-gradient(135deg, rgba(255,34,68,0.2), rgba(255,34,68,0.1));
+      border: 1px solid var(--red); border-radius: var(--radius); padding: 14px;
+      font-family: var(--font-head); font-size: 13px; letter-spacing: 2px; color: var(--red);
+      cursor: pointer; transition: all 0.25s; text-transform: uppercase; margin: 8px 0;
+    }
+    .btn-danger:hover { background: rgba(255,34,68,0.3); box-shadow: 0 0 20px var(--red-glow); }
+
+    /* FEEDBACK BOX */
+    .feedback-box {
+      border-radius: var(--radius); padding: 14px 16px; margin: 10px 0;
+      font-size: 13px; line-height: 1.6; display: none;
+    }
+    .feedback-box.correct-feedback { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+    .feedback-box.wrong-feedback { background: rgba(255,34,68,0.08); border: 1px solid rgba(255,34,68,0.3); color: var(--red); }
+    .feedback-box.info-feedback { background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.2); color: var(--cyan); }
+    .feedback-box.show { display: block; animation: fade-in 0.3s; }
+    @keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* XP POPUP */
+    #xp-popup {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--font-head); font-size: 36px; font-weight: 900;
+      pointer-events: none; z-index: 500; opacity: 0; text-align: center;
+    }
+    #xp-popup.show { animation: xp-pop 1.2s forwards; }
+    @keyframes xp-pop { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)} 30%{opacity:1;transform:translate(-50%,-70%) scale(1.2)} 70%{opacity:1;transform:translate(-50%,-90%) scale(1)} 100%{opacity:0;transform:translate(-50%,-110%) scale(0.8)} }
+
+    /* BOSS STEPS */
+    .boss-steps { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+    .boss-step {
+      width: 32px; height: 6px; border-radius: 3px; background: var(--border-bright); transition: all 0.4s;
+    }
+    .boss-step.active { background: var(--orange); box-shadow: 0 0 8px var(--orange-glow); }
+    .boss-step.done { background: var(--green); }
+
+    /* ECHO COUNTDOWN */
+    .echo-countdown {
+      text-align: center; font-family: var(--font-head); font-size: 72px; font-weight: 900;
+      color: var(--cyan); text-shadow: 0 0 40px var(--cyan); padding: 20px;
+      animation: count-pulse 1s infinite;
+    }
+    @keyframes count-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    .echo-instruction {
+      text-align: center; font-family: var(--font-head); font-size: 14px; letter-spacing: 3px;
+      color: var(--text-muted); text-transform: uppercase; margin: 8px 0;
+    }
+
+    /* ACCURACY DISPLAY */
+    .accuracy-display {
+      display: flex; align-items: center; gap: 10px; margin: 8px 0;
+    }
+    .accuracy-bar { flex: 1; height: 8px; background: var(--border-bright); border-radius: 4px; overflow: hidden; }
+    .accuracy-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.2,1,.3,1); }
+    .accuracy-pct { font-family: var(--font-head); font-size: 14px; min-width: 45px; text-align: right; }
+
+    /* DIFF VIEW */
+    .diff-view { font-size: 14px; line-height: 1.8; margin: 8px 0; font-style: italic; }
+    .diff-correct { color: var(--green); }
+    .diff-wrong { color: var(--red); text-decoration: line-through; }
+    .diff-missing { color: var(--orange); font-style: normal; }
+
+    /* ═══ RESULTS SCREEN ═══ */
+    #results-screen { padding: 20px 16px 60px; }
+    .results-header { text-align: center; padding: 30px 0 20px; }
+    .results-title {
+      font-family: var(--font-head); font-size: clamp(24px,7vw,40px); font-weight: 900;
+      margin-bottom: 8px;
+    }
+    .results-title.win { color: var(--gold); text-shadow: 0 0 30px var(--gold), 0 0 60px rgba(255,215,0,0.3); }
+    .results-title.loss { color: var(--text-muted); }
+    .results-score-big {
+      font-family: var(--font-head); font-size: 72px; font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1; margin: 16px 0;
+    }
+    .results-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+    .results-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 10px; text-align: center; }
+    .results-stat-value { font-family: var(--font-head); font-size: 24px; font-weight: 700; }
+    .results-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+
+    /* WEAKNESS TRACKER */
+    .weakness-section { margin: 20px 0; }
+    .weakness-title { font-family: var(--font-head); font-size: 11px; letter-spacing: 3px; color: var(--orange); margin-bottom: 10px; text-transform: uppercase; }
+    .weakness-item {
+      background: var(--bg-card); border: 1px solid var(--border-bright);
+      border-left: 3px solid var(--orange); border-radius: var(--radius); padding: 10px 14px; margin: 6px 0;
+      font-size: 13px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .weakness-count { font-family: var(--font-head); font-size: 11px; color: var(--red); }
+
+    /* BOSS FIGHT */
+    .boss-reveal {
+      text-align: center; padding: 30px 0;
+    }
+    .boss-emoji-big { font-size: 80px; margin-bottom: 10px; }
+    .boss-name-big { font-family: var(--font-head); font-size: 20px; color: var(--red); text-shadow: 0 0 20px var(--red); letter-spacing: 2px; }
+
+    /* CONFETTI placeholder */
+    #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 800; }
+
+    /* MOBILE KEYBOARD HANDLING */
+    @media (max-height: 500px) {
+      .logo-block { padding: 20px 0 15px; }
+      .logo-main { font-size: 28px; }
+    }
+    
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+    
+    /* TOOLTIP for explanations */
+    .explanation-box {
+      background: var(--bg-card2); border: 1px solid var(--border-bright);
+      border-radius: var(--radius); padding: 12px 14px; margin: 8px 0;
+      font-size: 12px; color: var(--text-muted); line-height: 1.6;
+    }
+    .explanation-box strong { color: var(--cyan); }
+
+    /* PROGRESS BARS in game */
+    .session-progress { margin: 10px 0; }
+    .session-progress-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+    .session-progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .session-progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple)); border-radius: 2px; transition: width 0.4s; }
+
+    /* STREAK INDICATOR */
+    .streak-row { display: flex; justify-content: center; gap: 5px; margin: 8px 0; }
+    .streak-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); transition: all 0.3s; }
+    .streak-dot.active { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+    .streak-dot.fire { background: var(--orange); box-shadow: 0 0 8px var(--orange); animation: fire-dot 0.5s infinite alternate; }
+    @keyframes fire-dot { from{transform:scale(1)} to{transform:scale(1.3)} }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+<div id="xp-popup"></div>
+
+<!-- HUD (always visible) -->
+<div id="hud" style="display:none">
+  <div id="hud-level">LVL 1</div>
+  <div id="hud-xp-bar"><div id="hud-xp-fill" style="width:0%"></div></div>
+  <div id="hud-xp-text">0 / 500 XP</div>
+  <div id="hud-combo" id="hud-combo">×1</div>
+</div>
+
+<!-- ═══ HOME SCREEN ═══ -->
+<div id="home-screen" class="screen active">
+  <div class="logo-block">
+    <div class="logo-main">PLINIUS</div>
+    <div class="logo-main" style="color:var(--orange);font-size:clamp(20px,5vw,32px);text-shadow:0 0 20px var(--orange)">MEMORY RAID</div>
+    <div class="logo-sub">LATIN COMBAT TRAINING</div>
+    <div class="logo-tagline">12 Tage. 10 Texte. Mündliche Prüfung besiegt.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-total-xp" style="color:var(--gold)">0</div>
+      <div class="stat-label">Total XP</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-dungeons" style="color:var(--cyan)">0/10</div>
+      <div class="stat-label">Abgeschlossen</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-streak" style="color:var(--orange)">0</div>
+      <div class="stat-label">Best Combo</div>
+    </div>
+  </div>
+
+  <div class="section-title">DUNGEONS</div>
+  <div class="dungeon-grid" id="dungeon-grid">
+    <!-- filled by JS -->
+  </div>
+  <button id="start-btn" onclick="Game.goToModeSelect()" disabled>⚔ DUNGEON WÄHLEN</button>
+</div>
+
+<!-- ═══ MODE SCREEN ═══ -->
+<div id="mode-screen" class="screen">
+  <div id="hud-placeholder-mode"></div>
+  <div class="mode-header">
+    <div id="mode-dungeon-emoji" style="font-size:40px;text-align:center;padding-top:10px"></div>
+    <div id="mode-dungeon-name" class="mode-dungeon-name"></div>
+    <div id="mode-dungeon-sub" class="mode-dungeon-sub"></div>
+  </div>
+  <div class="modes-grid">
+    <div class="mode-card echo-mode" onclick="Game.startMode('echo')">
+      <div class="mode-xp">+50 XP</div>
+      <div class="mode-icon">🧠</div>
+      <div class="mode-name">ECHO MODE</div>
+      <div class="mode-desc">Satz lesen → verbergen → auswendig tippen. Aktives Recall.</div>
+    </div>
+    <div class="mode-card hunt-mode" onclick="Game.startMode('hunt')">
+      <div class="mode-xp">+40 XP</div>
+      <div class="mode-icon">🎯</div>
+      <div class="mode-name">KONSTRUKT JAGD</div>
+      <div class="mode-desc">Identifiziere markierte Konstruktionen im Text.</div>
+    </div>
+    <div class="mode-card speedrun-mode" onclick="Game.startMode('speedrun')">
+      <div class="mode-xp">+60 XP</div>
+      <div class="mode-icon">⚡</div>
+      <div class="mode-name">ÜBERSETZUNG SPEEDRUN</div>
+      <div class="mode-desc">60 Sekunden. Übersetze so viele Sätze wie möglich.</div>
+    </div>
+    <div class="mode-card boss-mode" onclick="Game.startMode('boss')">
+      <div class="mode-xp">+100 XP</div>
+      <div class="mode-icon">💀</div>
+      <div class="mode-name">BOSSFIGHT: MÜNDLICHE SIMULATION</div>
+      <div class="mode-desc">Übersetzung + Konstruktion + Stilmittel. Bestehe alle 3 Runden.</div>
+    </div>
+  </div>
+  <button class="back-btn" onclick="Game.goHome()">← Zurück zur Karte</button>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<div id="game-screen" class="screen">
+  <div class="game-header">
+    <span class="game-mode-badge" id="game-mode-badge"></span>
+    <span class="game-sentence-counter" id="game-counter"></span>
+  </div>
+  <div class="session-progress">
+    <div class="session-progress-bar"><div class="session-progress-fill" id="session-progress-fill" style="width:0%"></div></div>
+  </div>
+  <div id="game-content"><!-- mode content injected here --></div>
+</div>
+
+<!-- ═══ RESULTS SCREEN ═══ -->
+<div id="results-screen" class="screen">
+  <div class="results-header">
+    <div id="results-emoji" style="font-size:60px;text-align:center;padding-bottom:10px"></div>
+    <div class="results-title" id="results-title"></div>
+    <div class="results-score-big" id="results-score"></div>
+  </div>
+  <div class="results-stats">
+    <div class="results-stat">
+      <div class="results-stat-value" id="res-accuracy" style="color:var(--cyan)">0%</div>
+      <div class="results-stat-label">Genauigkeit</div>
+    </div>
+    <div class="results-stat">
+      <div class="results-stat-value" id="res-xp" style="color:var(--gold)">0</div>
+      <div class="results-stat-label">XP verdient</div>
+    </div>
+    <div class="results-stat">
+      <div class="results-stat-value" id="res-combo" style="color:var(--orange)">×1</div>
+      <div class="results-stat-label">Max Combo</div>
+    </div>
+  </div>
+  <div id="weakness-section" class="weakness-section"></div>
+  <button class="btn-primary" id="results-replay-btn">↺ NOCHMAL</button>
+  <button class="btn-secondary" onclick="Game.goToModeSelect()">← ANDERE MODUS</button>
+  <button class="back-btn" onclick="Game.goHome()">🏠 Zur Karte</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA - Full Plinius Vesuvius letter texts
+// ═══════════════════════════════════════════════════════
+const GAME_DATA = {
+  "dungeons": [
+    {
+      "id": 1, "title": "Teil I", "subtitle": "Plinius schreibt an Tacitus",
+      "boss_name": "TACITUS THE CHRONICLER", "boss_emoji": "📜", "unlock_threshold": 0,
+      "sentences": [
+        {
+          "id": "s1_1",
+          "latin": "Petis, ut tibi avunculi mei exitum scribam, quo verius posteris tradere possis.",
+          "german": "Du bittest mich, dass ich dir vom Tod meines Onkels schreibe, damit du diesen umso wahrheitsgetreuer den Nachkommen überliefern kannst.",
+          "keywords": ["bittest","Tod","Onkel","schreibe","wahrheitsgetreuer","Nachkommen","überliefern"],
+          "constructions": [
+            {"type":"ut-Satz","words":"ut tibi avunculi mei exitum scribam","color":"#00e5ff","explanation":"Objektsatz nach 'petis': dass ich... schreibe"},
+            {"type":"Relativsatz","words":"quo verius posteris tradere possis","color":"#ff00cc","explanation":"quo + Komparativ: damit umso wahrheitsgetreuer"}
+          ],
+          "stylistic_devices": [{"name":"quo + Komparativ","function":"drückt Steigerung aus: umso wahrheitsgetreuer"}]
+        },
+        {
+          "id": "s1_2",
+          "latin": "Gratias ago; nam video morti eius, si celebretur a te, immortalem gloriam propositam esse.",
+          "german": "Ich danke dir; denn ich erkenne, dass seinem Tod, wenn er von dir verherrlicht wird, unsterblicher Ruhm in Aussicht gestellt ist.",
+          "keywords": ["danke","erkenne","Tod","verherrlicht","unsterblicher","Ruhm","Aussicht"],
+          "constructions": [
+            {"type":"AcI","words":"immortalem gloriam propositam esse","color":"#00ff88","explanation":"AcI nach 'video': immortalem gloriam propositam esse"},
+            {"type":"Konditionalsatz","words":"si celebretur a te","color":"#ff6a00","explanation":"si-Satz: wenn er von dir verherrlicht wird"}
+          ],
+          "stylistic_devices": [
+            {"name":"Antithese","function":"morti – immortalem: Tod vs. Unsterblichkeit"},
+            {"name":"AcI","function":"zeigt Plinius' Erkenntnis/Hoffnung"}
+          ]
+        },
+        {
+          "id": "s1_3",
+          "latin": "Quamvis enim clade pulcherrimarum terrarum ut populi ut urbes memorabili casu quasi semper victurus occiderit, quamvis ipse plurima opera mansura condiderit, multum tamen perpetuitati eius scriptorum tuorum aeternitas addet.",
+          "german": "Denn obwohl er beim Untergang der schönsten Landstriche wie die Bevölkerung, wie ganze Städte durch ein denkwürdiges Unglück gleichsam um ewig fortzuleben zu Tode gekommen ist, obwohl er selbst sehr viele bleibende Werke geschaffen hat, wird dennoch der ewige Bestand deiner Schriften dessen Fortleben sichern.",
+          "keywords": ["Untergang","schönsten","Bevölkerung","Städte","denkwürdiges","Unglück","fortzuleben","Werke","Fortleben","sichern"],
+          "constructions": [
+            {"type":"PFA","words":"quasi semper victurus","color":"#ffd700","explanation":"Participium Futuri Activi: quasi semper victurus – gleichsam um ewig fortzuleben"}
+          ],
+          "stylistic_devices": [
+            {"name":"Anaphora (quamvis... quamvis)","function":"Konzession: trotz allem..."},
+            {"name":"Klimax","function":"Steigerung der Werke des Plinius d.Ä."}
+          ]
+        },
+        {
+          "id": "s1_4",
+          "latin": "Equidem beatos puto, quibus deorum munere datum est aut facere scribenda aut scribere legenda, beatissimos vero, quibus utrumque datum est.",
+          "german": "Ich freilich halte diejenigen für glücklich, denen es durch ein Geschenk der Götter gegeben wurde, entweder Schreibenswertes zu tun oder Lesenswertes zu schreiben, die Glücklichsten aber, denen beides gegeben wurde.",
+          "keywords": ["glücklich","Geschenk","Götter","Schreibenswertes","Lesenswertes","Glücklichsten","beides"],
+          "constructions": [
+            {"type":"Gerundivum","words":"scribenda","color":"#ff00cc","explanation":"scribenda: (Dinge,) die geschrieben werden müssen"},
+            {"type":"Gerundivum","words":"legenda","color":"#ff00cc","explanation":"legenda: (Dinge,) die gelesen werden müssen"}
+          ],
+          "stylistic_devices": [
+            {"name":"Klimax (beatos – beatissimos)","function":"Steigerung: glücklich – am glücklichsten"},
+            {"name":"Parallelismus","function":"aut facere... aut scribere: gleiche Struktur"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2, "title": "Teil II", "subtitle": "Eine schreckliche Naturkatastrophe kündigt sich an",
+      "boss_name": "THE CLOUD HERALD", "boss_emoji": "☁️", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s2_1",
+          "latin": "Erat Miseni classemque imperio praesens regebat.",
+          "german": "Er befand sich in Misenum und führte persönlich das Kommando über die Flotte.",
+          "keywords": ["Misenum","persönlich","Kommando","Flotte"],
+          "constructions": [{"type":"Lokativ","words":"Miseni","color":"#00e5ff","explanation":"Miseni: Lokativ – 'in Misenum' (Ortsangabe ohne Präposition)"}],
+          "stylistic_devices": [{"name":"Asyndeton","function":"Erat... regebat: zwei Verben ohne Konjunktion – Tatkraft"}]
+        },
+        {
+          "id": "s2_2",
+          "latin": "Nonum kalendas Septembras hora fere septima mater mea indicat ei apparere nubem inusitata et magnitudine et specie.",
+          "german": "Am 24. August meldet ihm meine Mutter etwa um 13 Uhr, dass sich eine Wolke von ungewohnter Größe und Aussehen zeige.",
+          "keywords": ["24. August","Mutter","meldet","Wolke","ungewohnter","Größe","Aussehen"],
+          "constructions": [
+            {"type":"AcI","words":"apparere nubem inusitata et magnitudine et specie","color":"#00ff88","explanation":"AcI nach 'indicat': nubem apparere"},
+            {"type":"Ablativus qualitatis","words":"inusitata et magnitudine et specie","color":"#ff6a00","explanation":"von ungewohnter Größe und Gestalt"}
+          ],
+          "stylistic_devices": [{"name":"Hendiadyoin (magnitudine et specie)","function":"zwei Begriffe für ungewöhnliches Aussehen"}]
+        },
+        {
+          "id": "s2_3",
+          "latin": "Usus erat ille sole, mox frigida, gustaverat iacens, studebat; poscit soleas, ascendit locum, ex quo maxime miraculum illud conspici poterat.",
+          "german": "Jener hatte ein Sonnenbad genommen, hierauf ein Bad im kalten Wasser, hatte liegend etwas gegessen und ging seinen Studien nach; er fordert Sandalen, besteigt einen Ort, von welchem das Wunder am besten betrachtet werden konnte.",
+          "keywords": ["Sonnenbad","kalten Wasser","Studien","Sandalen","besteigt","betrachten"],
+          "constructions": [
+            {"type":"Infinitiv Präsens Passiv","words":"conspici","color":"#ff00cc","explanation":"conspici: gesehen/betrachtet werden"}
+          ],
+          "stylistic_devices": [{"name":"Historisches Präsens (poscit, ascendit)","function":"Vergegenwärtigung der Szene"}]
+        }
+      ]
+    },
+    {
+      "id": 3, "title": "Teil III", "subtitle": "Eine furchteinflößende Wolke",
+      "boss_name": "THE PINE CLOUD", "boss_emoji": "🌋", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s3_1",
+          "latin": "Nubes oriebatur, cuius similitudinem et formam non alia magis arbor quam pinus expresserit.",
+          "german": "Eine Wolke erhob sich, der kein anderer Baum mehr ähnelte als eine Pinie.",
+          "keywords": ["Wolke","erhob","Gestalt","Baum","ähnelte","Pinie"],
+          "constructions": [{"type":"Relativsatz (konsekutiv)","words":"cuius similitudinem et formam non alia magis arbor quam pinus expresserit","color":"#00e5ff","explanation":"Konjunktiv mit konsekutivem Nebensinn (so beschaffen, dass)"}],
+          "stylistic_devices": [{"name":"Vergleich (Pinie)","function":"Anschauliche Beschreibung der Wolkenform"}]
+        },
+        {
+          "id": "s3_2",
+          "latin": "Nam longissimo velut trunco elata in altum quibusdam ramis diffundebatur, dein senescente eo destituta aut etiam pondere suo victa in latitudinem vanescebat.",
+          "german": "Denn nachdem sie wie mit einem sehr langen Stamm in die Höhe emporgetragen worden war, breitete sie sich mit Ästen aus, daraufhin verlor sie den Auftrieb oder zerfloss in die Breite, besiegt von ihrem eigenen Gewicht.",
+          "keywords": ["Stamm","Höhe","Ästen","ausbreitete","nachließ","Breite","Gewicht"],
+          "constructions": [
+            {"type":"PPP","words":"elata","color":"#00ff88","explanation":"elata: emporgetragen (PPP von efferre)"},
+            {"type":"Ablativus absolutus","words":"senescente eo","color":"#ffd700","explanation":"senescente eo: als dieser (der Luftzug) nachließ"},
+            {"type":"PPP","words":"destituta","color":"#00ff88","explanation":"destituta: den Auftrieb verloren habend (PPP)"},
+            {"type":"PPP","words":"victa","color":"#00ff88","explanation":"victa: besiegt (PPP von vincere)"}
+          ],
+          "stylistic_devices": [
+            {"name":"Vergleich (velut trunco)","function":"Stamm der Pinie: bildhafte Anschaulichkeit"},
+            {"name":"Asyndeton","function":"zwei Ursachen nebeneinander, schnelles Tempo"}
+          ]
+        },
+        {
+          "id": "s3_3",
+          "latin": "candida interdum, interdum sordida et maculosa, prout terram cineremve sustulerat.",
+          "german": "Weiß bisweilen, bisweilen schmutzig und fleckig, je nachdem wie sie Erde oder Asche emporgetragen hatte.",
+          "keywords": ["Weiß","schmutzig","fleckig","Erde","Asche"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name":"Anapher (interdum – interdum)","function":"bald weiß, bald schmutzig: Wechsel der Farben"},
+            {"name":"Trikolon","function":"drei Adjektive: candida – sordida – maculosa"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4, "title": "Teil IV", "subtitle": "Plinius der Ältere bricht auf",
+      "boss_name": "PLINIUS THE ELDER", "boss_emoji": "⚓", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s4_1",
+          "latin": "Iubet liburnicam aptari; mihi, si venire una vellem, facit copiam; respondi studere me malle, et forte ipse, quod scriberem, dederat.",
+          "german": "Er befiehlt, dass ein Schnellsegler seefertig gemacht wird; mir stellt er es frei, ob ich mitkommen wolle; ich antwortete, dass ich mich lieber meinen Studien widmen wolle, und zufällig hatte er mir das gegeben, was ich schreiben wollte.",
+          "keywords": ["befiehlt","Schnellsegler","seefertig","Studien","widmen"],
+          "constructions": [
+            {"type":"Infinitiv Präsens Passiv","words":"aptari","color":"#ff00cc","explanation":"aptari: seefertig gemacht werden (Passiv Infinitiv)"},
+            {"type":"AcI","words":"studere me malle","color":"#00ff88","explanation":"AcI nach 'respondi': dass ich lieber studieren wolle"}
+          ],
+          "stylistic_devices": [{"name":"Asyndeton","function":"Iubet; facit; respondi: schnelle Abfolge von Handlungen"}]
+        },
+        {
+          "id": "s4_2",
+          "latin": "Egrediebatur domo; accipit codicillos Rectinae Tasci imminenti periculo exterritae; ut se tanto discrimini eriperet, orabat.",
+          "german": "Er ging gerade aus dem Haus; da erhält er einen Brief von Rectina, der Frau des Tascus, die durch die drohende Gefahr erschreckt worden war; sie bat, dass er sie der so großen Gefahr entrisse.",
+          "keywords": ["Haus","Brief","Rectina","drohende","Gefahr","erschreckt","entrisse"],
+          "constructions": [
+            {"type":"PPP","words":"exterritae","color":"#00ff88","explanation":"exterritae: erschreckt (PPP von exterrere)"},
+            {"type":"ut-Satz","words":"ut se tanto discrimini eriperet","color":"#00e5ff","explanation":"ut se eriperet: damit er sie rette (Finalsatz)"}
+          ],
+          "stylistic_devices": [{"name":"Descriptio ex negativo","function":"nec ulla nisi navibus fuga: keine Flucht außer per Schiff"}]
+        },
+        {
+          "id": "s4_3",
+          "latin": "Vertit ille consilium et, quod studioso animo incohaverat, obit maximo.",
+          "german": "Jener ändert seinen Plan und unternimmt mit größtem Heldenmut das, was er mit wissenschaftlichem Eifer begonnen hatte.",
+          "keywords": ["ändert","Plan","Heldenmut","unternimmt","wissenschaftlichem","Eifer","begonnen"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name":"Chiasmus","function":"studioso animo → animo maximo: Wandel vom Forscher zum Helden"},
+            {"name":"Ellipse (animo)","function":"obit maximo (sc. animo): Mut des Helden"}
+          ]
+        },
+        {
+          "id": "s4_4",
+          "latin": "Properat illuc, unde alii fugiunt, rectumque cursum rectaque gubernacula in periculum tenet, adeo solutus metu, ut omnes illius mali motus, omnes figuras, ut deprehenderat oculis, dictaret enotaretque.",
+          "german": "Er eilt dorthin, woher andere fliehen, und hält Kurs und Steuer geradewegs auf die Gefahr, so sehr von Furcht frei, dass er alle Bewegungen der Katastrophe, all ihre Phasen, wie er sie mit eigenen Augen aufgenommen hatte, diktierte und aufzeichnen ließ.",
+          "keywords": ["eilt","fliehen","Kurs","Steuer","Gefahr","Furcht","Katastrophe","Phasen","diktierte"],
+          "constructions": [
+            {"type":"ut-Satz (konsekutiv)","words":"ut omnes illius mali motus omnes figuras dictaret enotaretque","color":"#00e5ff","explanation":"adeo... ut dictaret: so sehr, dass er diktierte (Konsekutivsatz)"}
+          ],
+          "stylistic_devices": [
+            {"name":"Chiasmus (rectumque cursum rectaque gubernacula)","function":"Entschlossenheit: unbeirrbar"},
+            {"name":"Anapher (omnes – omnes)","function":"alles: totale Erfassung der Katastrophe"},
+            {"name":"Antithese (illuc unde alii fugiunt)","function":"er – die anderen: Heldencharakter"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5, "title": "Teil V", "subtitle": "Auf dem Meer",
+      "boss_name": "THE PUMICE STORM", "boss_emoji": "🌊", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s5_1",
+          "latin": "Iam navibus cinis incidebat, quo propius accederent, eo calidior et densior; iam pumices etiam nigrique et ambusti et fracti igne lapides; iam vadum subitum ruinaque montis litora obstantia.",
+          "german": "Schon fiel Asche auf die Schiffe herab, je näher sie heranrückten, desto heißer und dichter; schon auch schwarze und verbrannte und geborstene Steine; schon eine plötzliche Untiefe und unzugängliche Ufer durch das Herabstürzen des Berges.",
+          "keywords": ["Asche","Schiffe","näher","heißer","dichter","Bimssteine","Untiefe"],
+          "constructions": [
+            {"type":"quo + Komparativ","words":"quo propius accederent eo calidior et densior","color":"#ffd700","explanation":"quo propius accederent, (eo) calidior: je näher – desto heißer"},
+            {"type":"PPP","words":"ambusti","color":"#00ff88","explanation":"ambusti: ringsum verbrannt (PPP)"},
+            {"type":"PPP","words":"fracti","color":"#00ff88","explanation":"fracti: zerbrochen (PPP)"}
+          ],
+          "stylistic_devices": [
+            {"name":"Anapher (iam – iam – iam)","function":"Dreifaches 'schon': dramatische Steigerung der Bedrohung"},
+            {"name":"Polysyndeton (et... et... et)","function":"Aufzählung der Gefahren häuft sich"},
+            {"name":"Ellipse","function":"zweites und drittes 'iam' ohne Verb: dramatisch abgebrochen"}
+          ]
+        },
+        {
+          "id": "s5_2",
+          "latin": "Cunctatus est paulum, an retro flecteret; mox gubernatori, ut ita faceret, monenti \"Fortes\", inquit, \"fortuna iuvat. Pomponianum pete!\"",
+          "german": "Er zögerte ein wenig, ob er zurückfahren sollte; bald sagte er seinem Steuermann, als der ihn ermahnte umzukehren: 'Das Glück hilft den Tapferen! Halte Kurs auf Pomponianus!'",
+          "keywords": ["zögerte","zurückfahren","Steuermann","ermahnte","Glück","Tapferen","Kurs"],
+          "constructions": [
+            {"type":"indirekter Fragesatz","words":"an retro flecteret","color":"#ff00cc","explanation":"an retro flecteret: ob er zurückfahren sollte (Konj. Imperfekt)"},
+            {"type":"ut-Satz","words":"ut ita faceret","color":"#00e5ff","explanation":"ut ita faceret: dass er es so machen solle"},
+            {"type":"PPA (PC)","words":"monenti","color":"#ff6a00","explanation":"monenti: dem Mahnenden – PPA zu gubernatori"}
+          ],
+          "stylistic_devices": [{"name":"Sprichwort (Fortes fortuna iuvat)","function":"Allgemeine Wahrheit als Begründung: Mut lohnt sich"}]
+        }
+      ]
+    },
+    {
+      "id": 6, "title": "Teil VI", "subtitle": "Plinius bewahrt Ruhe",
+      "boss_name": "POMPONIANUS", "boss_emoji": "😨", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s6_1",
+          "latin": "Ibi, quamquam nondum periculo appropinquante, conspicuo tamen et, cum cresceret, proximo, sarcinas contulerat in naves, certus fugae, si contrarius ventus resedisset.",
+          "german": "Dort, obwohl die Gefahr noch nicht näher kam, aber dennoch sichtbar und sehr nahe war, da sie anwuchs, hatte er Gepäck auf Schiffe zusammentragen lassen, entschlossen zur Flucht, falls der widrige Wind nachgelassen hätte.",
+          "keywords": ["Gefahr","näher","sichtbar","Gepäck","Schiffe","Flucht","Wind","nachgelassen"],
+          "constructions": [
+            {"type":"Ablativus absolutus (mit quamquam)","words":"quamquam nondum periculo appropinquante","color":"#ffd700","explanation":"obwohl die Gefahr noch nicht nahte – Abl. abs. mit Konzessivkonjunktion"}
+          ],
+          "stylistic_devices": [{"name":"Antithese (nondum – tamen)","function":"Noch nicht – aber dennoch: die Gefahr ist latent"}]
+        },
+        {
+          "id": "s6_2",
+          "latin": "Quo tunc avunculus meus secundissimo invectus complectitur trepidantem, consolatur, hortatur, utque timorem eius sua securitate leniret, deferri in balneum iubet; lotus accubat, cenat aut hilaris aut, quod aeque magnum, similis hilari.",
+          "german": "Geradewegs dorthinein fuhr damals mein Onkel mit günstigem Wind, er umarmt den Zitternden, tröstet ihn, muntert ihn auf und lässt sich, damit er dessen Furcht durch seine Sorglosigkeit mildert, ins Bad tragen; gewaschen liegt er zu Tisch, speist entweder heiter oder einem Heiteren ähnlich, was gleichermaßen groß ist.",
+          "keywords": ["Onkel","günstigem","Wind","umarmt","Zitternden","tröstet","Sorglosigkeit","Bad","heiter"],
+          "constructions": [
+            {"type":"PPA (PC)","words":"trepidantem","color":"#ff6a00","explanation":"trepidantem: den Zitternden – PPA zu Pomponianus"},
+            {"type":"ut-Satz","words":"utque timorem eius sua securitate leniret","color":"#00e5ff","explanation":"utque timorem leniret: damit er die Furcht mildere (Finalsatz)"},
+            {"type":"PPP","words":"lotus","color":"#00ff88","explanation":"lotus: gewaschen (PPP von lavare)"}
+          ],
+          "stylistic_devices": [
+            {"name":"Asyndeton (complectitur, consolatur, hortatur)","function":"drei Verben ohne Konjunktion: Tatkraft des Plinius"},
+            {"name":"Antithese (timorem eius – sua securitate)","function":"seine Furcht vs. Plinius' Sorglosigkeit"},
+            {"name":"Chiasmus (aut hilaris aut similis hilari)","function":"echter Mut oder gleichwertiger Gleichmut"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7, "title": "Teil VII", "subtitle": "Die letzten Stunden",
+      "boss_name": "THE INFERNO", "boss_emoji": "🔥", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s7_1",
+          "latin": "Interim e Vesuvio monte pluribus locis latissimae flammae altaque incendia relucebant, quorum fulgor et claritas tenebris noctis excitabatur.",
+          "german": "Inzwischen leuchteten vom Vesuv an mehreren Orten sehr weite Flammenherde und hohe Brände auf, deren leuchtender Schein durch die Dunkelheit der Nacht gesteigert wurde.",
+          "keywords": ["Vesuv","Flammenherde","Brände","leuchteten","Schein","Dunkelheit","Nacht"],
+          "constructions": [],
+          "stylistic_devices": [{"name":"Hendiadyoin (fulgor et claritas)","function":"zwei Wörter für einen Begriff: der leuchtende Glanz"}]
+        },
+        {
+          "id": "s7_2",
+          "latin": "Ille agrestium trepidatione ignes relictos esse desertasque villas esse et per solitudinem ardere in remedium formidinis dictitabat.",
+          "german": "Jener sagte immer wieder als Heilmittel gegen die Furcht, dass wegen der Ratlosigkeit der Bauern Herdfeuer zurückgelassen und Landhäuser verlassen worden seien und nun durch die Abgeschiedenheit brannten.",
+          "keywords": ["Heilmittel","Furcht","Bauern","Herdfeuer","verlassen","brannten"],
+          "constructions": [
+            {"type":"AcI","words":"ignes relictos esse desertasque villas esse ardere","color":"#00ff88","explanation":"mehrfacher AcI nach 'dictitabat'"},
+            {"type":"Genitivus obiectivus","words":"formidinis","color":"#ff00cc","explanation":"formidinis: Angst – Genitiv des Objekts bei 'remedium'"}
+          ],
+          "stylistic_devices": [{"name":"dictitabat (Iterativum)","function":"immer wieder sagen: Plinius beruhigt pausenlos"}]
+        },
+        {
+          "id": "s7_3",
+          "latin": "Tum se quieti dedit et quievit verissimo quidem somno; nam meatus animae, qui illi propter amplitudinem corporis gravior et sonantior erat, ab iis, qui limini obversabantur, audiebatur.",
+          "german": "Dann begab er sich zur Ruhe und ruhte tatsächlich in einem sehr tiefen Schlaf; denn die Atemzüge, die bei jenem wegen der Fülle seines Körpers tiefer und lauter waren, wurden von denen, die sich vor der Schwelle aufhielten, gehört.",
+          "keywords": ["Ruhe","tiefen","Schlaf","Atemzüge","lauter","Schwelle","gehört"],
+          "constructions": [
+            {"type":"Dativus finalis","words":"quieti","color":"#ff6a00","explanation":"quieti: zur Ruhe – Dativ des Zwecks"},
+            {"type":"Dativus possessoris","words":"illi","color":"#ffd700","explanation":"illi: bei jenem – Dativ des Besitzers ('qui illi... erat')"}
+          ],
+          "stylistic_devices": [{"name":"Paradoxon/Ironie","function":"Inmitten der Katastrophe schläft Plinius tief – stoische Unerschrockenheit"}]
+        }
+      ]
+    },
+    {
+      "id": 8, "title": "Teil VIII", "subtitle": "Ein letzter Fluchtversuch",
+      "boss_name": "THE CRUMBLING WALLS", "boss_emoji": "🏚️", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s8_1",
+          "latin": "Sed area, ex qua diaeta adibatur, ita iam cinere mixtisque pumicibus oppleta surrexerat, ut, si longior in cubiculo mora esset, exitus negaretur.",
+          "german": "Aber der Hof, von dem aus man das Zimmer betrat, war bereits so mit Asche und Bimssteinen angefüllt, dass, falls der Aufenthalt noch länger wäre, der Ausgang verwehrt würde.",
+          "keywords": ["Hof","Zimmer","Asche","Bimssteinen","angefüllt","Aufenthalt","Ausgang","verwehrt"],
+          "constructions": [
+            {"type":"Irrealis der Gegenwart","words":"si longior in cubiculo mora esset exitus negaretur","color":"#ff2244","explanation":"si mora esset, exitus negaretur: Konjunktiv Imperfekt – irreale Bedingung"}
+          ],
+          "stylistic_devices": [{"name":"ut-Satz konsekutiv (ita... ut)","function":"So sehr angefüllt, dass... – Folge der Ascheschicht"}]
+        },
+        {
+          "id": "s8_2",
+          "latin": "In commune consultant, intra tecta subsistant an in aperto vagentur.",
+          "german": "Gemeinsam beratschlagen sie, ob sie im Haus bleiben sollen oder im Freien umherlaufen sollen.",
+          "keywords": ["Gemeinsam","beratschlagen","Haus","bleiben","Freien","umherlaufen"],
+          "constructions": [
+            {"type":"indirekter Fragesatz","words":"intra tecta subsistant an in aperto vagentur","color":"#ff00cc","explanation":"subsistant an vagentur: ob... oder... (Doppelfrage)"}
+          ],
+          "stylistic_devices": [
+            {"name":"Alliteration (In commune consultant)","function":"Alle beraten gemeinsam: keine Führungsperson"},
+            {"name":"Parallelismus (intra tecta – in aperto)","function":"beide Optionen gleich gefährlich"}
+          ]
+        },
+        {
+          "id": "s8_3",
+          "latin": "apud illum quidem ratio rationem, apud alios timorem timor vicit.",
+          "german": "Bei jenem besiegte freilich ein vernünftiger Grund den anderen; bei den anderen eine Furcht die andere.",
+          "keywords": ["vernünftiger","Grund","besiegte","Furcht","anderen"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name":"Chiasmus (ratio rationem – timorem timor)","function":"Plinius rational, die anderen panisch"},
+            {"name":"Polyptoton (ratio rationem / timorem timor)","function":"Kasus-Wechsel: verstärkt den Kontrast"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9, "title": "Teil IX", "subtitle": "Es bleibt Nacht",
+      "boss_name": "THE ETERNAL DARKNESS", "boss_emoji": "🌑", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s9_1",
+          "latin": "Iam dies alibi, illic nox omnium noctium nigrior densiorque; quam tamen faces multae variaque lumina solvebant.",
+          "german": "Schon war es anderswo wieder Tag, dort aber Nacht, schwärzer und dichter als alle Nächte; diese erhellten dennoch viele Fackeln und verschiedene Lichter.",
+          "keywords": ["anderswo","Tag","Nacht","schwärzer","dichter","Fackeln","Lichter","erhellten"],
+          "constructions": [
+            {"type":"Komparativ","words":"nigrior densiorque","color":"#00e5ff","explanation":"nigrior, densiorque: schwärzer, dichter – Komparativ von niger/densus"}
+          ],
+          "stylistic_devices": [
+            {"name":"Antithese (dies alibi – illic nox)","function":"Tag dort, Nacht hier: Ausnahmezustand"},
+            {"name":"Polyptoton (nox omnium noctium)","function":"Nacht aller Nächte: Hyperbel der Finsternis"}
+          ]
+        },
+        {
+          "id": "s9_2",
+          "latin": "Ibi super abiectum linteum recubans semel atque iterum frigidam aquam poposcit hausitque.",
+          "german": "Dort legte er sich auf ein ausgebreitetes Leintuch und forderte einmal und wieder frisches Wasser und trank es.",
+          "keywords": ["ausgebreitetes","Leintuch","Rücken","forderte","Wasser","trank"],
+          "constructions": [
+            {"type":"PPP (PC)","words":"abiectum","color":"#00ff88","explanation":"abiectum: ausgebreitet – PPP als Attribut zu linteum"},
+            {"type":"PPA (PC)","words":"recubans","color":"#ff6a00","explanation":"recubans: sich legend – PPA zu implizitem Subjekt"}
+          ],
+          "stylistic_devices": [{"name":"Stoische Ruhe","function":"Inmitten der Katastrophe legt er sich hin und trinkt – totale Gelassenheit"}]
+        },
+        {
+          "id": "s9_3",
+          "latin": "Deinde flammae flammarumque praenuntius odor sulphuris alios in fugam vertunt, excitant illum.",
+          "german": "Da treiben Flammen und der Vorbote der Flammen, der Geruch von Schwefel, die anderen in die Flucht, jenen schrecken sie auf.",
+          "keywords": ["Flammen","Vorbote","Schwefel","anderen","Flucht","aufschrecken"],
+          "constructions": [
+            {"type":"Genitivus obiectivus","words":"flammarumque","color":"#ff00cc","explanation":"flammarumque: der Flammen – Genitivus obiectivus bei praenuntius"}
+          ],
+          "stylistic_devices": [
+            {"name":"Polyptoton (flammae flammarumque)","function":"Feuer – Feuer: intensiviert die Bedrohung"},
+            {"name":"Personifikation (praenuntius)","function":"Der Geruch als 'Vorbote': dramatische Ankündigung"},
+            {"name":"Chiasmus (alios...vertunt, excitant illum)","function":"die anderen – er: gegensätzliche Reaktionen"}
+          ]
+        },
+        {
+          "id": "s9_4",
+          "latin": "Innitens servolis duobus assurrexit et statim concidit, ut ego colligo, crassiore caligine spiritu obstructo clausoque stomacho, qui illi natura invalidus et angustus et frequenter aestuans erat.",
+          "german": "Sich auf zwei kleine Sklaven stützend erhob er sich und brach sofort wieder zusammen, wie ich vermute, weil der dichte Dunst ihm den Atem abschnitt und die Luftröhre verschloss, die bei jenem von Natur aus schwach und eng und häufig trocken war.",
+          "keywords": ["Sklaven","stützend","erhob","zusammenbrach","Dunst","Atem","abschnitt","Luftröhre"],
+          "constructions": [
+            {"type":"PPA (PC)","words":"Innitens servolis duobus","color":"#ff6a00","explanation":"Innitens servolis duobus: sich auf zwei Sklaven stützend – PPA"},
+            {"type":"Ablativus absolutus","words":"spiritu obstructo","color":"#ffd700","explanation":"spiritu obstructo: da der Atem abgeschnitten war – Abl. Abs."},
+            {"type":"Ablativus absolutus","words":"clausoque stomacho","color":"#ffd700","explanation":"clausoque stomacho: und die Luftröhre verschlossen – Abl. Abs."}
+          ],
+          "stylistic_devices": [{"name":"ut = wie (Indikativ)","function":"ut ego colligo: wie ich vermute – kein Konjunktiv, da direkte Einschätzung"}]
+        }
+      ]
+    },
+    {
+      "id": 10, "title": "Teil X", "subtitle": "Das traurige Ende",
+      "boss_name": "FINIS", "boss_emoji": "💀", "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s10_1",
+          "latin": "Ubi dies redditus est – is ab eo, quem novissime viderat, tertius erat – corpus inventum est integrum, inlaesum opertumque, ut fuerat indutus; habitus corporis quiescenti quam defuncto similior.",
+          "german": "Sobald der Tag zurückgekehrt war – dieser war der dritte vom letzten, den er erlebt hatte – fand man seine Leiche unversehrt und unverletzt und zugedeckt, so wie er gekleidet gewesen war; das Erscheinungsbild glich mehr einem Ruhenden als einem Toten.",
+          "keywords": ["Tag","dritte","Leiche","unversehrt","unverletzt","zugedeckt","Ruhenden","Toten"],
+          "constructions": [
+            {"type":"PPP","words":"integrum inlaesum opertumque","color":"#00ff88","explanation":"integrum, inlaesum, opertum: PPP – unversehrt, unverletzt, bedeckt"}
+          ],
+          "stylistic_devices": [
+            {"name":"Alliteration/Homoioteleuton (integrum, inlaesum)","function":"Klang verstärkt Eindruck der Unversehrtheit"},
+            {"name":"Antithese (quiescenti – defuncto)","function":"Schlafend statt tot: stoische Würde im Tod"}
+          ]
+        },
+        {
+          "id": "s10_2",
+          "latin": "Unum adiciam: omnia me, quibus interfueram quaeque statim, cum maxime vera memorantur, audieram, persecuturum esse.",
+          "german": "Eines werde ich noch hinzufügen: dass ich allem, bei dem ich selbst dabei gewesen war und was ich sofort gehört hatte, beharrlich nachgegangen bin.",
+          "keywords": ["hinzufügen","dabei","gewesen","frisch","Erinnerung","beharrlich","nachgegangen"],
+          "constructions": [
+            {"type":"AcI","words":"omnia me persecuturum esse","color":"#00ff88","explanation":"omnia me... persecuturum esse: AcI nach 'adiciam' (futurisch)"}
+          ],
+          "stylistic_devices": []
+        },
+        {
+          "id": "s10_3",
+          "latin": "Tu potissima excerpes; aliud est enim epistulam, aliud historiam, aliud amico, aliud omnibus scribere. Vale.",
+          "german": "Du wirst das Wichtigste herausgreifen; denn es ist etwas anderes, einen Brief an einen Freund als Geschichte für alle zu schreiben. Leb wohl!",
+          "keywords": ["Wichtigste","herausgreifen","Brief","Freund","Geschichte","alle","Leb wohl"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name":"Anapher (aliud... aliud... aliud... aliud)","function":"Brief vs. Geschichte: Plinius schmeichelt Tacitus"},
+            {"name":"Antithese (amico – omnibus)","function":"Freund vs. alle: unterschiedliche Öffentlichkeit"}
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════
+// PROGRESS MANAGER
+// ═══════════════════════════════════════════════════════
+const Progress = {
+  data: null,
+  
+  init() {
+    const saved = localStorage.getItem('plinius_raid_v2');
+    this.data = saved ? JSON.parse(saved) : {
+      xp: 0, level: 1, bestCombo: 0,
+      dungeons: {},
+      weaknesses: {}
+    };
+    // init dungeon entries
+    GAME_DATA.dungeons.forEach(d => {
+      if (!this.data.dungeons[d.id]) this.data.dungeons[d.id] = { scores: [], avgScore: 0 };
+    });
+  },
+  
+  save() { localStorage.setItem('plinius_raid_v2', JSON.stringify(this.data)); },
+  
+  addXP(amount) {
+    this.data.xp += amount;
+    const xpPerLevel = 500;
+    this.data.level = Math.floor(this.data.xp / xpPerLevel) + 1;
+    this.save();
+    UI.updateHUD();
+  },
+  
+  recordScore(dungeonId, score) {
+    const d = this.data.dungeons[dungeonId];
+    d.scores.push(score);
+    if (d.scores.length > 10) d.scores.shift();
+    d.avgScore = Math.round(d.scores.reduce((a,b) => a+b, 0) / d.scores.length);
+    this.save();
+  },
+  
+  getDungeonScore(id) { return this.data.dungeons[id]?.avgScore || 0; },
+  
+  isDungeonUnlocked(dungeon) {
+    if (dungeon.unlock_threshold === 0) return true;
+    const prevId = dungeon.id - 1;
+    const prevScore = this.getDungeonScore(prevId);
+    return prevScore >= dungeon.unlock_threshold;
+  },
+  
+  recordWeakness(constructionType) {
+    if (!this.data.weaknesses[constructionType]) this.data.weaknesses[constructionType] = 0;
+    this.data.weaknesses[constructionType]++;
+    this.save();
+  },
+  
+  getTopWeaknesses(n = 3) {
+    return Object.entries(this.data.weaknesses)
+      .sort((a,b) => b[1]-a[1]).slice(0,n);
+  },
+  
+  updateBestCombo(combo) {
+    if (combo > this.data.bestCombo) { this.data.bestCombo = combo; this.save(); }
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// UI MANAGER
+// ═══════════════════════════════════════════════════════
+const UI = {
+  activeScreen: 'home-screen',
+  
+  showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    this.activeScreen = id;
+    const hud = document.getElementById('hud');
+    hud.style.display = (id === 'home-screen') ? 'none' : 'flex';
+    window.scrollTo(0,0);
+  },
+  
+  updateHUD() {
+    const xpPerLevel = 500;
+    const xp = Progress.data.xp;
+    const level = Progress.data.level;
+    const xpInLevel = xp % xpPerLevel;
+    const pct = (xpInLevel / xpPerLevel) * 100;
+    document.getElementById('hud-xp-fill').style.width = pct + '%';
+    document.getElementById('hud-xp-text').textContent = `${xpInLevel} / ${xpPerLevel} XP`;
+    document.getElementById('hud-level').textContent = `LVL ${level}`;
+  },
+  
+  updateCombo(combo) {
+    const el = document.getElementById('hud-combo');
+    el.textContent = `×${combo}`;
+    el.style.color = combo >= 5 ? 'var(--gold)' : combo >= 3 ? 'var(--orange)' : 'var(--text-muted)';
+    if (combo > 1) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 400); }
+  },
+  
+  showXPPopup(amount, combo) {
+    const el = document.getElementById('xp-popup');
+    const multiplier = combo > 1 ? ` ×${combo}` : '';
+    el.textContent = `+${amount} XP${multiplier}`;
+    el.style.color = combo >= 5 ? 'var(--gold)' : combo >= 3 ? 'var(--orange)' : 'var(--cyan)';
+    el.style.textShadow = `0 0 20px currentColor`;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  },
+  
+  buildDungeonGrid() {
+    const grid = document.getElementById('dungeon-grid');
+    grid.innerHTML = '';
+    GAME_DATA.dungeons.forEach(d => {
+      const unlocked = Progress.isDungeonUnlocked(d);
+      const score = Progress.getDungeonScore(d.id);
+      const card = document.createElement('div');
+      card.className = `dungeon-card${unlocked ? '' : ' locked'}`;
+      card.dataset.id = d.id;
+      card.innerHTML = `
+        <div class="dungeon-emoji">${d.boss_emoji}</div>
+        <div class="dungeon-info">
+          <div class="dungeon-title">${d.title.toUpperCase()}</div>
+          <div class="dungeon-subtitle">${d.subtitle}</div>
+          <div class="dungeon-progress">
+            <div class="dungeon-progress-bar"><div class="dungeon-progress-fill" style="width:${score}%"></div></div>
+            <div class="dungeon-pct">${score}%</div>
+          </div>
+        </div>
+        <div class="dungeon-lock">${unlocked ? (score >= 70 ? '✅' : '') : '🔒'}</div>
+      `;
+      if (unlocked) {
+        card.onclick = () => {
+          document.querySelectorAll('.dungeon-card').forEach(c => c.classList.remove('selected-dungeon'));
+          card.classList.add('selected-dungeon');
+          Game.selectedDungeon = d;
+          document.getElementById('start-btn').disabled = false;
+          document.getElementById('start-btn').textContent = `⚔ ${d.title} ANGREIFEN`;
+        };
+      }
+      grid.appendChild(card);
+    });
+    
+    // update stats
+    const completedCount = GAME_DATA.dungeons.filter(d => Progress.getDungeonScore(d.id) >= 70).length;
+    document.getElementById('stat-total-xp').textContent = Progress.data.xp;
+    document.getElementById('stat-dungeons').textContent = `${completedCount}/10`;
+    document.getElementById('stat-streak').textContent = Progress.data.bestCombo;
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// GAME ENGINE
+// ═══════════════════════════════════════════════════════
+const Game = {
+  selectedDungeon: null,
+  currentMode: null,
+  currentSentenceIndex: 0,
+  sentences: [],
+  combo: 1,
+  sessionXP: 0,
+  sessionCorrect: 0,
+  sessionTotal: 0,
+  sessionMaxCombo: 1,
+  timerInterval: null,
+  timeLeft: 60,
+  
+  // Echo mode state
+  echoPhase: 'memorize', // 'memorize' | 'type'
+  echoCountdown: null,
+  
+  // Boss fight state
+  bossStep: 0,
+  bossData: null,
+  
+  goHome() {
+    this.cleanup();
+    UI.buildDungeonGrid();
+    UI.showScreen('home-screen');
+  },
+  
+  goToModeSelect() {
+    if (!this.selectedDungeon) return;
+    const d = this.selectedDungeon;
+    document.getElementById('mode-dungeon-emoji').textContent = d.boss_emoji;
+    document.getElementById('mode-dungeon-name').textContent = d.boss_name;
+    document.getElementById('mode-dungeon-sub').textContent = d.subtitle;
+    UI.showScreen('mode-screen');
+    UI.updateHUD();
+  },
+  
+  startMode(mode) {
+    this.cleanup();
+    this.currentMode = mode;
+    this.combo = 1;
+    this.sessionXP = 0;
+    this.sessionCorrect = 0;
+    this.sessionTotal = 0;
+    this.sessionMaxCombo = 1;
+    this.currentSentenceIndex = 0;
+    this.sentences = [...this.selectedDungeon.sentences];
+    // shuffle
+    for (let i = this.sentences.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.sentences[i], this.sentences[j]] = [this.sentences[j], this.sentences[i]];
+    }
+    
+    UI.showScreen('game-screen');
+    UI.updateHUD();
+    this.updateModeUI();
+    
+    if (mode === 'echo') this.renderEchoMode();
+    else if (mode === 'hunt') this.renderHuntMode();
+    else if (mode === 'speedrun') this.renderSpeedrunMode();
+    else if (mode === 'boss') this.renderBossMode();
+  },
+  
+  cleanup() {
+    if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+    if (this.echoCountdown) { clearInterval(this.echoCountdown); this.echoCountdown = null; }
+  },
+  
+  updateModeUI() {
+    const labels = { echo: '🧠 ECHO MODE', hunt: '🎯 KONSTRUKT JAGD', speedrun: '⚡ SPEEDRUN', boss: '💀 BOSSFIGHT' };
+    const colors = { echo: 'var(--cyan)', hunt: 'var(--purple)', speedrun: 'var(--orange)', boss: 'var(--red)' };
+    const badge = document.getElementById('game-mode-badge');
+    badge.textContent = labels[this.currentMode];
+    badge.style.color = colors[this.currentMode];
+    badge.style.background = colors[this.currentMode] + '20';
+    badge.style.border = `1px solid ${colors[this.currentMode]}40`;
+    
+    const total = this.currentMode === 'speedrun' ? '∞' : this.sentences.length;
+    document.getElementById('game-counter').textContent = `${this.currentSentenceIndex + 1}/${total}`;
+  },
+  
+  getCurrentSentence() {
+    return this.sentences[this.currentSentenceIndex % this.sentences.length];
+  },
+  
+  nextSentence() {
+    this.currentSentenceIndex++;
+    if (this.currentSentenceIndex >= this.sentences.length) {
+      if (this.currentMode === 'speedrun') {
+        // reshuffle and continue in speedrun
+        this.sentences = [...this.selectedDungeon.sentences];
+        this.currentSentenceIndex = 0;
+      } else {
+        this.showResults();
+        return false;
+      }
+    }
+    this.updateModeUI();
+    return true;
+  },
+  
+  onCorrect(baseXP) {
+    this.sessionCorrect++;
+    this.sessionTotal++;
+    this.combo++;
+    if (this.combo > this.sessionMaxCombo) this.sessionMaxCombo = this.combo;
+    Progress.updateBestCombo(this.combo);
+    const earned = Math.round(baseXP * (1 + (this.combo - 1) * 0.5));
+    this.sessionXP += earned;
+    Progress.addXP(earned);
+    UI.updateCombo(this.combo);
+    UI.showXPPopup(earned, this.combo);
+    return earned;
+  },
+  
+  onWrong(constructionType) {
+    this.sessionTotal++;
+    this.combo = 1;
+    UI.updateCombo(1);
+    if (constructionType) Progress.recordWeakness(constructionType);
+  },
+  
+  // ─── ECHO MODE ───────────────────────────────────────
+  renderEchoMode() {
+    const s = this.getCurrentSentence();
+    this.echoPhase = 'memorize';
+    let countdown = 5;
+    
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="echo-instruction">LESE UND MERKE DIR DEN SATZ</div>
+      <div class="latin-display">${s.latin}</div>
+      <div class="german-display">${s.german}</div>
+      <div class="echo-countdown" id="echo-timer">5</div>
+      <div style="text-align:center;color:var(--text-dim);font-size:12px">Der Satz verschwindet in...</div>
+    `;
+    
+    const progress = (this.currentSentenceIndex / this.sentences.length) * 100;
+    document.getElementById('session-progress-fill').style.width = progress + '%';
+    
+    this.echoCountdown = setInterval(() => {
+      countdown--;
+      const el = document.getElementById('echo-timer');
+      if (el) el.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(this.echoCountdown);
+        this.echoCountdown = null;
+        this.renderEchoType(s);
+      }
+    }, 1000);
+  },
+  
+  renderEchoType(s) {
+    this.echoPhase = 'type';
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="echo-instruction">TIPPE DEN LATEINISCHEN SATZ AUS DEM GEDÄCHTNIS</div>
+      <textarea class="game-input" id="echo-input" placeholder="Gib hier den Satz ein..." autofocus spellcheck="false" autocomplete="off"></textarea>
+      <div class="feedback-box" id="echo-feedback"></div>
+      <div id="echo-diff"></div>
+      <button class="btn-primary" id="echo-submit-btn" onclick="Game.submitEcho()">✓ PRÜFEN</button>
+      <button class="btn-secondary" onclick="Game.showEchoAnswer()">👁 LÖSUNG ZEIGEN</button>
+    `;
+    document.getElementById('echo-input').focus();
+  },
+  
+  submitEcho() {
+    const s = this.getCurrentSentence();
+    const input = document.getElementById('echo-input').value.trim();
+    const accuracy = this.calcTextAccuracy(input, s.latin);
+    const isGood = accuracy >= 75;
+    
+    const feedback = document.getElementById('echo-feedback');
+    feedback.className = `feedback-box ${isGood ? 'correct-feedback' : 'wrong-feedback'} show`;
+    
+    // Show diff
+    const diff = document.getElementById('echo-diff');
+    diff.innerHTML = this.buildDiff(input, s.latin);
+    
+    const accDisplay = `<div class="accuracy-display" style="margin:8px 0">
+      <div class="accuracy-bar"><div class="accuracy-fill" style="width:${accuracy}%;background:${accuracy>=75?'var(--green)':'var(--red)'}"></div></div>
+      <div class="accuracy-pct" style="color:${accuracy>=75?'var(--green)':'var(--red)'}">${accuracy}%</div>
+    </div>`;
+    
+    if (isGood) {
+      feedback.innerHTML = `✓ KORREKT! ${accDisplay}`;
+      const earned = this.onCorrect(50);
+      const latin = document.querySelector('.game-input');
+      if (latin) latin.classList.add('correct-input');
+    } else {
+      feedback.innerHTML = `✗ NICHT GUT GENUG (${accuracy}%) ${accDisplay}<br><small style="color:var(--text-muted)">Original: <em style="color:var(--text)">${s.latin}</em></small>`;
+      this.onWrong(null);
+      const latin = document.querySelector('.game-input');
+      if (latin) latin.classList.add('wrong-input');
+    }
+    
+    document.getElementById('echo-submit-btn').style.display = 'none';
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-primary';
+    nextBtn.textContent = this.currentSentenceIndex + 1 < this.sentences.length ? '→ NÄCHSTER SATZ' : '⚑ ERGEBNISSE';
+    nextBtn.onclick = () => {
+      if (!this.nextSentence()) return;
+      this.renderEchoMode();
+    };
+    document.getElementById('game-content').appendChild(nextBtn);
+  },
+  
+  showEchoAnswer() {
+    const s = this.getCurrentSentence();
+    const content = document.getElementById('game-content');
+    const existing = content.querySelector('.latin-display');
+    if (!existing) {
+      const div = document.createElement('div');
+      div.className = 'latin-display';
+      div.textContent = s.latin;
+      content.insertBefore(div, content.querySelector('textarea'));
+    }
+    this.onWrong(null);
+  },
+  
+  calcTextAccuracy(input, target) {
+    const normalize = s => s.toLowerCase().replace(/[,;.!?"«»–-]/g,'').replace(/\s+/g,' ').trim();
+    const inputWords = normalize(input).split(' ').filter(Boolean);
+    const targetWords = normalize(target).split(' ').filter(Boolean);
+    if (targetWords.length === 0) return 100;
+    let correct = 0;
+    inputWords.forEach(w => { if (targetWords.includes(w)) correct++; });
+    return Math.round((correct / targetWords.length) * 100);
+  },
+  
+  buildDiff(input, target) {
+    const normalize = s => s.toLowerCase().replace(/[,;.!?"«»–-]/g,'').replace(/\s+/g,' ').trim();
+    const iWords = input.split(' ').filter(Boolean);
+    const tWords = target.split(' ').filter(Boolean);
+    let html = '<div class="diff-view">';
+    tWords.forEach((w, i) => {
+      const iWord = iWords[i] || '';
+      const clean = (s) => s.toLowerCase().replace(/[,;.!?"]/g,'');
+      if (clean(iWord) === clean(w)) {
+        html += `<span class="diff-correct">${w} </span>`;
+      } else if (iWord) {
+        html += `<span class="diff-wrong">${iWord} </span><span class="diff-missing">[${w}] </span>`;
+      } else {
+        html += `<span class="diff-missing">[${w}] </span>`;
+      }
+    });
+    html += '</div>';
+    return html;
+  },
+  
+  // ─── CONSTRUCTION HUNT ──────────────────────────────
+  renderHuntMode() {
+    const s = this.getCurrentSentence();
+    if (!s.constructions || s.constructions.length === 0) {
+      // no constructions, auto-pass with a note
+      if (!this.nextSentence()) return;
+      this.renderHuntMode();
+      return;
+    }
+    
+    const construction = s.constructions[Math.floor(Math.random() * s.constructions.length)];
+    
+    // Build all construction types for choices
+    const allTypes = [
+      'AcI','PPP','PPA (PC)','Ablativus absolutus','Gerundivum','Gerundium',
+      'ut-Satz','Lokativ','PFA','Komparativ','indirekter Fragesatz',
+      'Konditionalsatz','Irrealis der Gegenwart','Dativus finalis','Dativus possessoris',
+      'Genitivus obiectivus','Ablativus qualitatis','Relativsatz (konsekutiv)',
+      'quo + Komparativ','Infinitiv Präsens Passiv','Relativsatz'
+    ];
+    
+    const correctType = construction.type;
+    const wrongTypes = allTypes.filter(t => t !== correctType);
+    const shuffled = wrongTypes.sort(() => Math.random() - 0.5).slice(0, 3);
+    const choices = [correctType, ...shuffled].sort(() => Math.random() - 0.5);
+    
+    // highlight the construction words in the sentence
+    let highlightedLatin = s.latin;
+    const wordsToHighlight = construction.words.split(' ').filter(Boolean);
+    wordsToHighlight.forEach(w => {
+      const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
+      highlightedLatin = highlightedLatin.replace(re, `<mark style="background:${construction.color}22;color:${construction.color};border-radius:3px;padding:1px 3px;">$&</mark>`);
+    });
+    
+    const progress = (this.currentSentenceIndex / this.sentences.length) * 100;
+    document.getElementById('session-progress-fill').style.width = progress + '%';
+    
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="latin-display">${highlightedLatin}</div>
+      <div class="construction-question">
+        <div class="q-label">WAS IST DIE MARKIERTE KONSTRUKTION?</div>
+        <div class="q-type" style="color:${construction.color}">${construction.words.split(' ').slice(0,5).join(' ')}...</div>
+      </div>
+      <div class="choices-grid" id="hunt-choices">
+        ${choices.map(c => `<button class="choice-btn" onclick="Game.submitHunt('${c}','${correctType.replace(/'/g,"\\'")}','${construction.type}','${construction.explanation.replace(/'/g,"\\'")}',this)">${c}</button>`).join('')}
+      </div>
+      <div class="feedback-box" id="hunt-feedback"></div>
+    `;
+  },
+  
+  submitHunt(chosen, correct, constructionType, explanation, btn) {
+    const isCorrect = chosen === correct;
+    const allBtns = document.querySelectorAll('.choice-btn');
+    
+    allBtns.forEach(b => {
+      const bType = b.textContent;
+      if (bType === correct) b.className = 'choice-btn correct';
+      else if (b === btn && !isCorrect) b.className = 'choice-btn wrong';
+      else b.className = 'choice-btn reveal';
+    });
+    
+    const feedback = document.getElementById('hunt-feedback');
+    if (isCorrect) {
+      feedback.className = 'feedback-box correct-feedback show';
+      feedback.innerHTML = `✓ RICHTIG! <strong>${constructionType}</strong><br><small style="color:var(--text-muted);font-style:italic">${explanation}</small>`;
+      this.onCorrect(40);
+    } else {
+      feedback.className = 'feedback-box wrong-feedback show';
+      feedback.innerHTML = `✗ FALSCH — Richtige Antwort: <strong>${correct}</strong><br><small style="color:var(--text-muted);font-style:italic">${explanation}</small>`;
+      this.onWrong(constructionType);
+    }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn-primary';
+    nextBtn.style.marginTop = '12px';
+    nextBtn.textContent = this.currentSentenceIndex + 1 < this.sentences.length ? '→ NÄCHSTE FRAGE' : '⚑ ERGEBNISSE';
+    nextBtn.onclick = () => {
+      if (!this.nextSentence()) return;
+      this.renderHuntMode();
+    };
+    document.getElementById('game-content').appendChild(nextBtn);
+  },
+  
+  // ─── TRANSLATION SPEEDRUN ────────────────────────────
+  renderSpeedrunMode() {
+    this.timeLeft = 60;
+    let score = 0;
+    let answeredThisRound = false;
+    
+    const renderSentence = () => {
+      const s = this.getCurrentSentence();
+      answeredThisRound = false;
+      
+      document.getElementById('game-content').innerHTML = `
+        <div id="timer-display" class="normal">60</div>
+        <div class="latin-display" id="speedrun-latin">${s.latin}</div>
+        <textarea class="game-input" id="speedrun-input" placeholder="Deutsche Übersetzung..." autofocus spellcheck="false"></textarea>
+        <div class="feedback-box" id="speedrun-feedback"></div>
+        <button class="btn-primary" id="speedrun-submit" onclick="Game.submitSpeedrun()">✓ ABGEBEN</button>
+        <button class="btn-secondary" onclick="Game.skipSpeedrun()">→ ÜBERSPRINGEN</button>
+      `;
+      document.getElementById('speedrun-input').focus();
+      document.getElementById('game-counter').textContent = `Score: ${score} | Zeit: ${this.timeLeft}s`;
+    };
+    
+    const progress = (this.currentSentenceIndex / this.sentences.length) * 100;
+    document.getElementById('session-progress-fill').style.width = progress + '%';
+    
+    renderSentence();
+    
+    this.timerInterval = setInterval(() => {
+      this.timeLeft--;
+      const timerEl = document.getElementById('timer-display');
+      if (timerEl) {
+        timerEl.textContent = this.timeLeft;
+        timerEl.className = this.timeLeft <= 15 ? 'urgent' : 'normal';
+      }
+      document.getElementById('game-counter').textContent = `Score: ${score} | Zeit: ${this.timeLeft}s`;
+      
+      if (this.timeLeft <= 0) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+        this.sessionTotal = Math.max(this.sessionTotal, 1);
+        this.showResults();
+      }
+    }, 1000);
+    
+    // Store helpers on Game object for speedrun callbacks
+    this._speedrunRenderNext = () => {
+      this.nextSentence();
+      renderSentence();
+    };
+    this._speedrunScore = () => score;
+    this._speedrunAddScore = (v) => { score += v; };
+  },
+  
+  submitSpeedrun() {
+    const s = this.getCurrentSentence();
+    const input = document.getElementById('speedrun-input')?.value.trim() || '';
+    const accuracy = this.calcKeywordAccuracy(input, s.keywords);
+    
+    const feedback = document.getElementById('speedrun-feedback');
+    if (!feedback) return;
+    
+    if (accuracy >= 60) {
+      feedback.className = 'feedback-box correct-feedback show';
+      feedback.textContent = `✓ ${accuracy}% — Weiter!`;
+      this._speedrunAddScore(1);
+      const earned = this.onCorrect(60);
+      setTimeout(() => this._speedrunRenderNext?.(), 900);
+    } else {
+      feedback.className = 'feedback-box wrong-feedback show';
+      feedback.innerHTML = `✗ ${accuracy}% — Wichtige Wörter: <em style="color:var(--text-muted)">${s.keywords.slice(0,4).join(', ')}</em>`;
+      this.onWrong(null);
+      // Show correct translation after 1.5s
+      setTimeout(() => {
+        const f2 = document.getElementById('speedrun-feedback');
+        if (f2) f2.innerHTML += `<br><small style="color:var(--cyan)">${s.german}</small>`;
+        setTimeout(() => this._speedrunRenderNext?.(), 2000);
+      }, 500);
+    }
+    
+    const submitBtn = document.getElementById('speedrun-submit');
+    if (submitBtn) submitBtn.disabled = true;
+  },
+  
+  skipSpeedrun() {
+    this.onWrong(null);
+    this._speedrunRenderNext?.();
+  },
+  
+  calcKeywordAccuracy(input, keywords) {
+    const normalize = s => s.toLowerCase().replace(/[,;.!?"]/g,'');
+    const normInput = normalize(input);
+    let hits = 0;
+    keywords.forEach(k => {
+      if (normInput.includes(normalize(k))) hits++;
+    });
+    return keywords.length > 0 ? Math.round((hits / keywords.length) * 100) : 0;
+  },
+  
+  // ─── BOSS FIGHT ──────────────────────────────────────
+  renderBossMode() {
+    const s = this.getCurrentSentence();
+    this.bossStep = 0;
+    this.bossData = s;
+    
+    // Boss intro screen
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="boss-reveal">
+        <div class="boss-emoji-big">${this.selectedDungeon.boss_emoji}</div>
+        <div class="boss-name-big">${this.selectedDungeon.boss_name}</div>
+        <div style="color:var(--text-muted);font-size:13px;margin:12px 0">Drei Runden: Übersetzung → Konstruktion → Stilmittel</div>
+        <div class="boss-steps">
+          <div class="boss-step"></div>
+          <div class="boss-step"></div>
+          <div class="boss-step"></div>
+        </div>
+      </div>
+      <div class="latin-display" style="border-color:rgba(255,34,68,0.4)">${s.latin}</div>
+      <div style="color:var(--text-dim);font-size:12px;text-align:center;margin:8px 0">Präge dir diesen Satz ein — er ist die Grundlage für alle drei Runden</div>
+      <button class="btn-danger" onclick="Game.renderBossStep1()">⚔ KAMPF BEGINNEN</button>
+    `;
+    
+    const progress = (this.currentSentenceIndex / this.sentences.length) * 100;
+    document.getElementById('session-progress-fill').style.width = progress + '%';
+  },
+  
+  renderBossStep1() {
+    this.bossStep = 1;
+    const s = this.bossData;
+    this.timeLeft = 30;
+    
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="boss-steps">
+        <div class="boss-step active"></div>
+        <div class="boss-step"></div>
+        <div class="boss-step"></div>
+      </div>
+      <div id="timer-display" class="normal">${this.timeLeft}</div>
+      <div class="construction-question" style="border-color:rgba(255,34,68,0.3)">
+        <div class="q-label">RUNDE 1: ÜBERSETZUNG</div>
+        <div class="q-type" style="color:var(--red)">Übersetze den Satz!</div>
+      </div>
+      <div class="latin-display">${s.latin}</div>
+      <textarea class="game-input" id="boss-input1" placeholder="Deutsche Übersetzung..." autofocus spellcheck="false"></textarea>
+      <div class="feedback-box" id="boss-feedback1"></div>
+      <button class="btn-danger" onclick="Game.submitBossStep1()">✓ RUNDE 1 ABGEBEN</button>
+    `;
+    
+    this.timerInterval = setInterval(() => {
+      this.timeLeft--;
+      const el = document.getElementById('timer-display');
+      if (el) { el.textContent = this.timeLeft; el.className = this.timeLeft <= 10 ? 'urgent' : 'normal'; }
+      if (this.timeLeft <= 0) { clearInterval(this.timerInterval); this.timerInterval = null; this.submitBossStep1(); }
+    }, 1000);
+  },
+  
+  submitBossStep1() {
+    if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+    const s = this.bossData;
+    const input = document.getElementById('boss-input1')?.value.trim() || '';
+    const accuracy = this.calcKeywordAccuracy(input, s.keywords);
+    const feedback = document.getElementById('boss-feedback1');
+    
+    if (feedback) {
+      if (accuracy >= 50) {
+        feedback.className = 'feedback-box correct-feedback show';
+        feedback.innerHTML = `✓ Runde 1 bestanden! (${accuracy}%)<br><small style="color:var(--text-muted)">${s.german}</small>`;
+        this.onCorrect(30);
+      } else {
+        feedback.className = 'feedback-box wrong-feedback show';
+        feedback.innerHTML = `✗ Runde 1 schwach (${accuracy}%)<br><small style="color:var(--text-muted)">${s.german}</small>`;
+        this.onWrong(null);
+      }
+    }
+    
+    const btn = document.createElement('button');
+    btn.className = 'btn-danger'; btn.style.marginTop = '12px';
+    btn.textContent = '→ RUNDE 2: KONSTRUKTION';
+    btn.onclick = () => this.renderBossStep2();
+    document.getElementById('game-content').appendChild(btn);
+    document.querySelector('.btn-danger')?.remove?.();
+    const oldBtn = document.getElementById('game-content').querySelectorAll('.btn-danger');
+    // keep only last
+  },
+  
+  renderBossStep2() {
+    const s = this.bossData;
+    if (!s.constructions || s.constructions.length === 0) {
+      this.renderBossStep3();
+      return;
+    }
+    const construction = s.constructions[0];
+    
+    const allTypes = ['AcI','PPP','PPA (PC)','Ablativus absolutus','Gerundivum','ut-Satz','Lokativ','PFA','indirekter Fragesatz','Irrealis der Gegenwart','Dativus finalis','Genitivus obiectivus'];
+    const correctType = construction.type;
+    const wrongTypes = allTypes.filter(t => t !== correctType).sort(() => Math.random() - 0.5).slice(0,3);
+    const choices = [correctType, ...wrongTypes].sort(() => Math.random() - 0.5);
+    
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="boss-steps">
+        <div class="boss-step done"></div>
+        <div class="boss-step active"></div>
+        <div class="boss-step"></div>
+      </div>
+      <div class="construction-question">
+        <div class="q-label">RUNDE 2: KONSTRUKTION</div>
+        <div class="q-type" style="color:var(--purple)">"${construction.words.split(' ').slice(0,4).join(' ')}..."</div>
+      </div>
+      <div class="latin-display">${s.latin}</div>
+      <div class="choices-grid">
+        ${choices.map(c => `<button class="choice-btn" onclick="Game.submitBossStep2('${c}','${correctType.replace(/'/g,"\\'")}','${construction.explanation.replace(/'/g,"\\'")}',this)">${c}</button>`).join('')}
+      </div>
+      <div class="feedback-box" id="boss-feedback2"></div>
+    `;
+  },
+  
+  submitBossStep2(chosen, correct, explanation, btn) {
+    const isCorrect = chosen === correct;
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent === correct) b.className = 'choice-btn correct';
+      else if (b === btn && !isCorrect) b.className = 'choice-btn wrong';
+      else b.className = 'choice-btn reveal';
+    });
+    
+    const feedback = document.getElementById('boss-feedback2');
+    if (isCorrect) {
+      if(feedback) { feedback.className = 'feedback-box correct-feedback show'; feedback.innerHTML = `✓ Runde 2 bestanden!<br><small>${explanation}</small>`; }
+      this.onCorrect(35);
+    } else {
+      if(feedback) { feedback.className = 'feedback-box wrong-feedback show'; feedback.innerHTML = `✗ Richtig: <strong>${correct}</strong><br><small>${explanation}</small>`; }
+      this.onWrong(correct);
+    }
+    
+    const btn2 = document.createElement('button');
+    btn2.className = 'btn-danger'; btn2.style.marginTop = '12px';
+    btn2.textContent = '→ RUNDE 3: STILMITTEL';
+    btn2.onclick = () => this.renderBossStep3();
+    document.getElementById('game-content').appendChild(btn2);
+  },
+  
+  renderBossStep3() {
+    const s = this.bossData;
+    if (!s.stylistic_devices || s.stylistic_devices.length === 0) {
+      this.finishBoss();
+      return;
+    }
+    const device = s.stylistic_devices[0];
+    
+    const allDevices = ['Anapher','Chiasmus','Antithese','Asyndeton','Ellipse','Parallelismus',
+      'Polysyndeton','Hyperbel','Personifikation','Klimax','Polyptoton','Hendiadyoin',
+      'Alliteration','Homoioteleuton','Inversion','Ironie'];
+    const correct = device.name.split(' ')[0];
+    const wrongs = allDevices.filter(d => !device.name.includes(d)).sort(() => Math.random() - 0.5).slice(0,3);
+    const choices = [correct, ...wrongs].sort(() => Math.random() - 0.5);
+    
+    const content = document.getElementById('game-content');
+    content.innerHTML = `
+      <div class="boss-steps">
+        <div class="boss-step done"></div>
+        <div class="boss-step done"></div>
+        <div class="boss-step active"></div>
+      </div>
+      <div class="construction-question" style="border-color:rgba(255,215,0,0.3)">
+        <div class="q-label">RUNDE 3: STILMITTEL</div>
+        <div class="q-type" style="color:var(--gold)">Was ist das Stilmittel?</div>
+      </div>
+      <div class="latin-display">${s.latin}</div>
+      <div class="explanation-box"><strong>Funktion:</strong> ${device.function}</div>
+      <div class="choices-grid">
+        ${choices.map(c => `<button class="choice-btn" onclick="Game.submitBossStep3('${c}','${correct}','${device.name.replace(/'/g,"\\'")}','${device.function.replace(/'/g,"\\'")}',this)">${c}</button>`).join('')}
+      </div>
+      <div class="feedback-box" id="boss-feedback3"></div>
+    `;
+  },
+  
+  submitBossStep3(chosen, correct, name, func, btn) {
+    const isCorrect = chosen === correct;
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent === correct) b.className = 'choice-btn correct';
+      else if (b === btn && !isCorrect) b.className = 'choice-btn wrong';
+      else b.className = 'choice-btn reveal';
+    });
+    
+    const feedback = document.getElementById('boss-feedback3');
+    if (isCorrect) {
+      if(feedback) { feedback.className = 'feedback-box correct-feedback show'; feedback.textContent = `✓ BOSS DEFEATED! ${name}: ${func}`; }
+      this.onCorrect(35);
+    } else {
+      if(feedback) { feedback.className = 'feedback-box wrong-feedback show'; feedback.innerHTML = `✗ Richtig: <strong>${name}</strong>: ${func}`; }
+      this.onWrong(name);
+    }
+    
+    setTimeout(() => this.finishBoss(), 1500);
+  },
+  
+  finishBoss() {
+    const hasMore = this.currentSentenceIndex + 1 < this.sentences.length;
+    const content = document.getElementById('game-content');
+    
+    content.innerHTML = `
+      <div style="text-align:center;padding:30px 0">
+        <div style="font-size:60px;margin-bottom:12px">⚔</div>
+        <div style="font-family:var(--font-head);font-size:20px;color:var(--gold);text-shadow:0 0 20px var(--gold);margin-bottom:8px">BOSS DEFEATED!</div>
+        <div style="color:var(--text-muted);font-size:13px">XP verdient: <strong style="color:var(--gold)">${this.sessionXP}</strong></div>
+      </div>
+      <button class="btn-primary" onclick="${hasMore ? 'Game.nextBoss()' : 'Game.showResults()'}">${hasMore ? '→ NÄCHSTER BOSS' : '⚑ FINALE ERGEBNISSE'}</button>
+    `;
+  },
+  
+  nextBoss() {
+    if (!this.nextSentence()) return;
+    this.renderBossMode();
+  },
+  
+  // ─── RESULTS ─────────────────────────────────────────
+  showResults() {
+    this.cleanup();
+    
+    const accuracy = this.sessionTotal > 0 ? Math.round((this.sessionCorrect / this.sessionTotal) * 100) : 0;
+    Progress.recordScore(this.selectedDungeon.id, accuracy);
+    
+    const isWin = accuracy >= 70;
+    document.getElementById('results-emoji').textContent = isWin ? '🏆' : '💪';
+    const title = document.getElementById('results-title');
+    title.textContent = isWin ? 'DUNGEON BESIEGT!' : 'WEITER TRAINIEREN!';
+    title.className = `results-title ${isWin ? 'win' : 'loss'}`;
+    document.getElementById('results-score').textContent = `${accuracy}%`;
+    document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+    document.getElementById('res-xp').textContent = `+${this.sessionXP}`;
+    document.getElementById('res-combo').textContent = `×${this.sessionMaxCombo}`;
+    
+    // Weaknesses
+    const ws = Progress.getTopWeaknesses(3);
+    const wsSection = document.getElementById('weakness-section');
+    if (ws.length > 0) {
+      wsSection.innerHTML = `<div class="weakness-title">⚠ SCHWACHSTELLEN</div>` + 
+        ws.map(([type, count]) => `<div class="weakness-item"><span>${type}</span><span class="weakness-count">${count}× falsch</span></div>`).join('');
+    } else { wsSection.innerHTML = ''; }
+    
+    // Replay button
+    const mode = this.currentMode;
+    document.getElementById('results-replay-btn').onclick = () => this.startMode(mode);
+    
+    // Confetti for win
+    if (isWin) this.fireConfetti();
+    
+    UI.showScreen('results-screen');
+  },
+  
+  fireConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const pieces = Array.from({length: 80}, () => ({
+      x: Math.random() * canvas.width,
+      y: -20,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 3 + 2,
+      size: Math.random() * 10 + 5,
+      color: ['#00e5ff','#ffd700','#ff6a00','#00ff88','#9b30ff'][Math.floor(Math.random()*5)],
+      rot: Math.random() * 360
+    }));
+    
+    let frame = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        p.y += p.vy; p.x += p.vx; p.rot += 5; p.vy *= 0.99;
+        if (p.y > canvas.height) p.y = -20;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, 1 - frame/150);
+        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size/2);
+        ctx.restore();
+      });
+      frame++;
+      if (frame < 150) requestAnimationFrame(animate);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+    requestAnimationFrame(animate);
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// BACKGROUND PARTICLES
+// ═══════════════════════════════════════════════════════
+function initParticles() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+  resize();
+  window.addEventListener('resize', resize);
+  
+  const particles = Array.from({length: 40}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    size: Math.random() * 2 + 0.5,
+    color: Math.random() > 0.7 ? '#00e5ff' : Math.random() > 0.5 ? '#9b30ff' : '#ff6a00'
+  }));
+  
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x = (p.x + p.vx + canvas.width) % canvas.width;
+      p.y = (p.y + p.vy + canvas.height) % canvas.height;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.6;
+      ctx.fill();
+    });
+    requestAnimationFrame(animate);
+  };
+  requestAnimationFrame(animate);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  Progress.init();
+  UI.buildDungeonGrid();
+  UI.updateHUD();
+  initParticles();
+  
+  // Enter key for inputs
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      const submitBtn = document.querySelector('#echo-submit-btn, #speedrun-submit, #boss-input1 + .btn-danger');
+      if (submitBtn) submitBtn.click();
+    }
+  });
+});
+</script>
+</body>
+</html>
