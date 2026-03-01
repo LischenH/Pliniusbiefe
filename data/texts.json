@@ -1,0 +1,522 @@
+{
+  "dungeons": [
+    {
+      "id": 1,
+      "title": "Teil I",
+      "subtitle": "Plinius schreibt an Tacitus",
+      "boss_name": "TACITUS THE CHRONICLER",
+      "boss_emoji": "📜",
+      "unlock_threshold": 0,
+      "sentences": [
+        {
+          "id": "s1_1",
+          "latin": "Petis, ut tibi avunculi mei exitum scribam, quo verius posteris tradere possis.",
+          "german": "Du bittest mich, dass ich dir vom Tod meines Onkels schreibe, damit du diesen umso wahrheitsgetreuer den Nachkommen überliefern kannst.",
+          "keywords": ["bittest", "Tod", "Onkel", "schreibe", "wahrheitsgetreuer", "Nachkommen", "überliefern"],
+          "constructions": [
+            {"type": "ut-Satz", "start": 1, "end": 6, "color": "#00FFFF", "explanation": "Objektsatz nach 'petis': dass ich... schreibe"},
+            {"type": "Relativsatz", "start": 7, "end": 11, "color": "#FF00FF", "explanation": "quo + Komparativ: damit umso wahrheitsgetreuer"}
+          ],
+          "stylistic_devices": [
+            {"name": "quo + Komparativ", "function": "drückt Steigerung aus: umso wahrheitsgetreuer"}
+          ]
+        },
+        {
+          "id": "s1_2",
+          "latin": "Gratias ago; nam video morti eius, si celebretur a te, immortalem gloriam propositam esse.",
+          "german": "Ich danke dir; denn ich erkenne, dass seinem Tod, wenn er von dir verherrlicht wird, unsterblicher Ruhm in Aussicht gestellt ist.",
+          "keywords": ["danke", "erkenne", "Tod", "verherrlicht", "unsterblicher", "Ruhm", "Aussicht"],
+          "constructions": [
+            {"type": "AcI", "start": 3, "end": 9, "color": "#00FF88", "explanation": "AcI nach 'video': immortalem gloriam propositam esse"},
+            {"type": "Konditionalsatz", "start": 4, "end": 6, "color": "#FF6B00", "explanation": "si-Satz: wenn er von dir verherrlicht wird"}
+          ],
+          "stylistic_devices": [
+            {"name": "Antithese", "function": "morti – immortalem: Tod vs. Unsterblichkeit"},
+            {"name": "AcI", "function": "zeigt Plinius' Erkenntnis/Hoffnung"}
+          ]
+        },
+        {
+          "id": "s1_3",
+          "latin": "Quamvis enim clade pulcherrimarum terrarum ut populi ut urbes memorabili casu quasi semper victurus occiderit, quamvis ipse plurima opera mansura condiderit, multum tamen perpetuitati eius scriptorum tuorum aeternitas addet.",
+          "german": "Denn obwohl er beim Untergang der schönsten Landstriche wie die Bevölkerung, wie ganze Städte durch ein denkwürdiges Unglück gleichsam um ewig fortzuleben zu Tode gekommen ist, obwohl er selbst sehr viele bleibende Werke geschaffen hat, wird dennoch der ewige Bestand deiner Schriften dessen Fortleben sichern.",
+          "keywords": ["Untergang", "schönsten", "Bevölkerung", "Städte", "denkwürdiges", "Unglück", "fortzuleben", "Werke", "geschaffen", "Fortleben", "sichern"],
+          "constructions": [
+            {"type": "PFA", "start": 11, "end": 12, "color": "#FFD700", "explanation": "Participium Futuri Activi: quasi semper victurus – gleichsam um ewig fortzuleben"}
+          ],
+          "stylistic_devices": [
+            {"name": "Anaphora (quamvis... quamvis)", "function": "Konzession: trotz allem..."},
+            {"name": "Klimax", "function": "Steigerung der Werke des Plinius d.Ä."}
+          ]
+        },
+        {
+          "id": "s1_4",
+          "latin": "Equidem beatos puto, quibus deorum munere datum est aut facere scribenda aut scribere legenda, beatissimos vero, quibus utrumque datum est.",
+          "german": "Ich freilich halte diejenigen für glücklich, denen es durch ein Geschenk der Götter gegeben wurde, entweder Schreibenswertes zu tun oder Lesenswertes zu schreiben, die Glücklichsten aber, denen beides gegeben wurde.",
+          "keywords": ["glücklich", "Geschenk", "Götter", "Schreibenswertes", "Lesenswertes", "Glücklichsten", "beides"],
+          "constructions": [
+            {"type": "Gerundivum", "start": 9, "end": 9, "color": "#FF00FF", "explanation": "scribenda: (Dinge,) die geschrieben werden müssen/sollen"},
+            {"type": "Gerundivum", "start": 11, "end": 11, "color": "#FF00FF", "explanation": "legenda: (Dinge,) die gelesen werden müssen/sollen"}
+          ],
+          "stylistic_devices": [
+            {"name": "Klimax (beatos – beatissimos)", "function": "Steigerung: glücklich – am glücklichsten"},
+            {"name": "Parallelismus", "function": "aut facere... aut scribere: gleiche Struktur"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Teil II",
+      "subtitle": "Eine schreckliche Naturkatastrophe kündigt sich an",
+      "boss_name": "THE CLOUD HERALD",
+      "boss_emoji": "☁️",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s2_1",
+          "latin": "Erat Miseni classemque imperio praesens regebat.",
+          "german": "Er befand sich in Misenum und führte persönlich das Kommando über die Flotte.",
+          "keywords": ["Misenum", "persönlich", "Kommando", "Flotte"],
+          "constructions": [
+            {"type": "Lokativ", "start": 1, "end": 1, "color": "#00FFFF", "explanation": "Miseni: Lokativ – 'in Misenum' (Ortsangabe ohne Präposition)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Asyndeton", "function": "Erat... regebat: zwei Verben ohne Konjunktion – Tatkraft"}
+          ]
+        },
+        {
+          "id": "s2_2",
+          "latin": "Nonum kalendas Septembras hora fere septima mater mea indicat ei apparere nubem inusitata et magnitudine et specie.",
+          "german": "Am 24. August meldet ihm meine Mutter etwa um 13.00 Uhr, dass sich eine Wolke von ungewohnter Größe und Aussehen zeige.",
+          "keywords": ["24. August", "Mutter", "meldet", "Wolke", "ungewohnter", "Größe", "Aussehen"],
+          "constructions": [
+            {"type": "AcI", "start": 8, "end": 13, "color": "#00FF88", "explanation": "AcI nach 'indicat': nubem apparere – dass eine Wolke erscheint"},
+            {"type": "Ablativus qualitatis", "start": 11, "end": 13, "color": "#FF6B00", "explanation": "inusitata et magnitudine et specie: von ungewohnter Größe und Gestalt"}
+          ],
+          "stylistic_devices": [
+            {"name": "Hendiadyoin (magnitudine et specie)", "function": "zwei Begriffe für einen Sachverhalt: ungewöhnliches Aussehen"}
+          ]
+        },
+        {
+          "id": "s2_3",
+          "latin": "Usus erat ille sole, mox frigida, gustaverat iacens, studebat; poscit soleas, ascendit locum, ex quo maxime miraculum illud conspici poterat.",
+          "german": "Jener hatte ein Sonnenbad genommen, hierauf ein Bad im kalten Wasser, hatte im Liegen etwas zu sich genommen und ging seinen Studien nach; er fordert Sandalen, besteigt einen Ort, von welchem aus man jenes sonderbare Naturschauspiel am besten betrachten konnte.",
+          "keywords": ["Sonnenbad", "kalten Wasser", "Studien", "Sandalen", "besteigt", "Naturschauspiel", "betrachten"],
+          "constructions": [
+            {"type": "PPP", "start": 0, "end": 0, "color": "#00FFFF", "explanation": "Usus (erat): Plusquamperfekt Passiv – hatte genommen"},
+            {"type": "Infinitiv Präsens Passiv", "start": 13, "end": 13, "color": "#FF00FF", "explanation": "conspici: gesehen/betrachtet werden"}
+          ],
+          "stylistic_devices": [
+            {"name": "Historisches Präsens (poscit, ascendit)", "function": "Vergegenwärtigung: macht die Szene lebendig"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Teil III",
+      "subtitle": "Eine furchteinflößende Wolke",
+      "boss_name": "THE PINE CLOUD",
+      "boss_emoji": "🌋",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s3_1",
+          "latin": "Nubes oriebatur, cuius similitudinem et formam non alia magis arbor quam pinus expresserit.",
+          "german": "Eine Wolke erhob sich, der in ihrer Gestalt kein anderer Baum mehr ähnelte als eine Pinie.",
+          "keywords": ["Wolke", "erhob", "Gestalt", "Baum", "ähnelte", "Pinie"],
+          "constructions": [
+            {"type": "Relativsatz (konsekutiv)", "start": 2, "end": 9, "color": "#00FFFF", "explanation": "cuius... expresserit: Konjunktiv mit konsekutivem Nebensinn (so beschaffen, dass)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Vergleich (Pinie)", "function": "Anschauliche Beschreibung der Wolkenform"}
+          ]
+        },
+        {
+          "id": "s3_2",
+          "latin": "Nam longissimo velut trunco elata in altum quibusdam ramis diffundebatur, dein senescente eo destituta aut etiam pondere suo victa in latitudinem vanescebat.",
+          "german": "Denn nachdem sie zunächst wie mit einem sehr langen Stamm in die Höhe emporgetragen worden war, breitete sie sich mit gewissen Ästen aus, daraufhin verlor sie den Auftrieb, als dieser nachließ, oder zerfloss in die Breite, besiegt von ihrem eigenen Gewicht.",
+          "keywords": ["langen", "Stamm", "Höhe", "Ästen", "ausbreitete", "nachließ", "Breite", "Gewicht"],
+          "constructions": [
+            {"type": "PPP", "start": 4, "end": 4, "color": "#00FF88", "explanation": "elata: emporgetragen (Passiv Partizip Perfekt)"},
+            {"type": "Ablativus absolutus", "start": 9, "end": 10, "color": "#FFD700", "explanation": "senescente eo: als dieser (der Luftzug) nachließ"},
+            {"type": "PPP", "start": 11, "end": 11, "color": "#00FF88", "explanation": "destituta: den Auftrieb verloren habend"},
+            {"type": "PPP", "start": 14, "end": 14, "color": "#00FF88", "explanation": "victa: besiegt (von ihrem eigenen Gewicht)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Vergleich (velut trunco)", "function": "Stamm der Pinie: bildhafte Anschaulichkeit"},
+            {"name": "Asyndeton (destituta aut... victa)", "function": "zwei Ursachen nebeneinander, Tempo"}
+          ]
+        },
+        {
+          "id": "s3_3",
+          "latin": "candida interdum, interdum sordida et maculosa, prout terram cineremve sustulerat.",
+          "german": "Weiß bisweilen, bisweilen schmutzig und fleckig, je nachdem wie sie Erde oder Asche emporgetragen hatte.",
+          "keywords": ["Weiß", "schmutzig", "fleckig", "Erde", "Asche"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name": "Anapher (interdum – interdum)", "function": "Wechsel der Farben: bald weiß, bald schmutzig"},
+            {"name": "Trikolon", "function": "candida – sordida – maculosa: drei Adjektive steigern die Beschreibung"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Teil IV",
+      "subtitle": "Plinius der Ältere bricht auf",
+      "boss_name": "PLINIUS THE ELDER",
+      "boss_emoji": "⚓",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s4_1",
+          "latin": "Magnum propiusque noscendum, ut eruditissimo viro, visum est.",
+          "german": "Dies schien ihm als einem sehr gelehrten Mann wert, (es) aus der Nähe zu erforschen.",
+          "keywords": ["gelehrten", "Mann", "wert", "Nähe", "erforschen"],
+          "constructions": [
+            {"type": "Dativ (Bezug)", "start": 3, "end": 5, "color": "#FF6B00", "explanation": "ut eruditissimo viro: wie einem sehr gelehrten Mann – Dativus"}
+          ],
+          "stylistic_devices": [
+            {"name": "Inversion", "function": "Magnum (Objekt) steht vorne – hebt Bedeutung hervor"}
+          ]
+        },
+        {
+          "id": "s4_2",
+          "latin": "Iubet liburnicam aptari; mihi, si venire una vellem, facit copiam; respondi studere me malle, et forte ipse, quod scriberem, dederat.",
+          "german": "Er befiehlt, dass ein Schnellsegler seefertig gemacht wird; mir stellt er es frei, ob ich mit ihm kommen wollte; ich antwortete, dass ich mich lieber meinen Studien widmen wolle, und zufälligerweise hatte er selbst mir das, was ich schreiben wollte, gegeben.",
+          "keywords": ["befiehlt", "Schnellsegler", "seefertig", "Studien", "widmen"],
+          "constructions": [
+            {"type": "Infinitiv Präsens Passiv", "start": 1, "end": 2, "color": "#00FFFF", "explanation": "aptari: seefertig gemacht werden (Passiv Infinitiv)"},
+            {"type": "AcI", "start": 9, "end": 11, "color": "#00FF88", "explanation": "studere me malle: dass ich lieber studieren wolle"}
+          ],
+          "stylistic_devices": [
+            {"name": "Asyndeton", "function": "Iubet; facit; respondi: schnelle Abfolge von Handlungen"}
+          ]
+        },
+        {
+          "id": "s4_3",
+          "latin": "Egrediebatur domo; accipit codicillos Rectinae Tasci imminenti periculo exterritae; ut se tanto discrimini eriperet, orabat.",
+          "german": "Er ging gerade aus dem Haus; da erhält er einen Brief von Rectina, der Frau eines gewissen Tascus, die durch die drohende Gefahr sehr erschreckt worden war; sie bat, dass er sie der so großen Gefahr entrisse.",
+          "keywords": ["Haus", "Brief", "Rectina", "drohende", "Gefahr", "erschreckt", "entrisse"],
+          "constructions": [
+            {"type": "PPP", "start": 7, "end": 7, "color": "#00FF88", "explanation": "exterritae: erschreckt (PPP als Partizip bei Rectinae)"},
+            {"type": "ut-Satz", "start": 9, "end": 12, "color": "#00FFFF", "explanation": "ut se eriperet: damit er sie rette (Finalsatz)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Descriptio ex negativo", "function": "nec ulla nisi navibus fuga: keine Flucht außer per Schiff"}
+          ]
+        },
+        {
+          "id": "s4_4",
+          "latin": "Vertit ille consilium et, quod studioso animo incohaverat, obit maximo.",
+          "german": "Jener ändert seinen Plan und unternimmt mit größtem Heldenmut das, was er mit wissenschaftlichem Eifer begonnen hatte.",
+          "keywords": ["ändert", "Plan", "Heldenmut", "unternimmt", "wissenschaftlichem", "Eifer", "begonnen"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name": "Chiasmus (studioso animo – animo maximo)", "function": "studiosus → maximus: Wandel vom Forscher zum Helden"},
+            {"name": "Ellipse (animo)", "function": "obit maximo (sc. animo): Mut des Helden"}
+          ]
+        },
+        {
+          "id": "s4_5",
+          "latin": "Properat illuc, unde alii fugiunt, rectumque cursum rectaque gubernacula in periculum tenet, adeo solutus metu, ut omnes illius mali motus, omnes figuras, ut deprehenderat oculis, dictaret enotaretque.",
+          "german": "Er eilt dorthin, woher andere fliehen, und er hält den Kurs und das Steuer geradewegs auf die Gefahr zu, so sehr von Furcht frei, dass er alle Bewegungen jener Katastrophe, all ihre Phasen, wie er sie mit seinen eigenen Augen aufgenommen hatte, diktierte und aufzeichnen ließ.",
+          "keywords": ["eilt", "fliehen", "Kurs", "Steuer", "Gefahr", "Furcht", "Katastrophe", "Phasen", "diktierte"],
+          "constructions": [
+            {"type": "ut-Satz (konsekutiv)", "start": 9, "end": 18, "color": "#00FFFF", "explanation": "adeo... ut dictaret: so sehr, dass er diktierte (Konsekutivsatz)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Chiasmus (rectumque cursum rectaque gubernacula)", "function": "Entschlossenheit: beide Mal 'gerade' – unbeirrbar"},
+            {"name": "Anapher (omnes – omnes)", "function": "alles: totale Erfassung der Katastrophe"},
+            {"name": "Antithese (Properat illuc, unde alii fugiunt)", "function": "er – die anderen: Heldencharakter"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Teil V",
+      "subtitle": "Auf dem Meer",
+      "boss_name": "THE PUMICE STORM",
+      "boss_emoji": "🌊",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s5_1",
+          "latin": "Iam navibus cinis incidebat, quo propius accederent, eo calidior et densior; iam pumices etiam nigrique et ambusti et fracti igne lapides; iam vadum subitum ruinaque montis litora obstantia.",
+          "german": "Schon fiel Asche auf die Schiffe herab, je näher sie heranrückten, desto heißer und dichter; schon auch schwarze und ringsum verbrannte und durch das Feuer geborstene Steine; schon eine plötzliche Untiefe und unzugängliche Uferstellen durch das Herabstürzen des Berges.",
+          "keywords": ["Asche", "Schiffe", "näher", "heißer", "dichter", "Bimssteine", "Untiefe"],
+          "constructions": [
+            {"type": "quo + Komparativ", "start": 3, "end": 7, "color": "#FFD700", "explanation": "quo propius accederent, (eo) calidior: je näher – desto heißer"},
+            {"type": "PPP", "start": 10, "end": 10, "color": "#00FF88", "explanation": "ambusti: ringsum verbrannt (PPP)"},
+            {"type": "PPP", "start": 12, "end": 12, "color": "#00FF88", "explanation": "fracti: zerbrochen (PPP)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Anapher (iam – iam – iam)", "function": "Dreifaches 'schon': Steigerung der Bedrohung"},
+            {"name": "Polysyndeton (et... et... et)", "function": "Aufzählung der Gefahren häuft sich"},
+            {"name": "Ellipse", "function": "zweites und drittes 'iam' ohne Verb: abgebrochen, dramatisch"}
+          ]
+        },
+        {
+          "id": "s5_2",
+          "latin": "Cunctatus est paulum, an retro flecteret; mox gubernatori, ut ita faceret, monenti \"Fortes\", inquit, \"fortuna iuvat. Pomponianum pete!\"",
+          "german": "Er zögerte ein wenig, ob er zurückfahren sollte; bald sagte er zu seinem Steuermann, als der ihn ermahnte, dass er es so machen sollte: 'Das Glück hilft den Tapferen! Halte Kurs auf Pomponianus!'",
+          "keywords": ["zögerte", "zurückfahren", "Steuermann", "ermahnte", "Glück", "Tapferen", "Kurs"],
+          "constructions": [
+            {"type": "indirekter Fragesatz", "start": 3, "end": 5, "color": "#FF00FF", "explanation": "an retro flecteret: ob er zurückfahren sollte (Konj. Imperfekt)"},
+            {"type": "ut-Satz", "start": 7, "end": 9, "color": "#00FFFF", "explanation": "ut ita faceret: dass er es so machen solle"},
+            {"type": "PPA (PC)", "start": 10, "end": 10, "color": "#FF6B00", "explanation": "monenti: dem Mahnenden – PPA zu gubernatori"}
+          ],
+          "stylistic_devices": [
+            {"name": "Sprichwort (Fortes fortuna iuvat)", "function": "Allgemeine Wahrheit als Begründung: Mut lohnt sich"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Teil VI",
+      "subtitle": "Plinius bewahrt Ruhe",
+      "boss_name": "POMPONIANUS",
+      "boss_emoji": "😨",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s6_1",
+          "latin": "Ibi, quamquam nondum periculo appropinquante, conspicuo tamen et, cum cresceret, proximo, sarcinas contulerat in naves, certus fugae, si contrarius ventus resedisset.",
+          "german": "Dort, obwohl die Gefahr noch nicht näher kam, aber dennoch sichtbar und sehr nahe war, da sie anwuchs, hatte er Gepäckstücke auf Schiffe zusammentragen lassen, entschlossen zur Flucht, falls der widrige Wind nachgelassen hätte.",
+          "keywords": ["Gefahr", "näher", "sichtbar", "Gepäckstücke", "Schiffe", "Flucht", "Wind", "nachgelassen"],
+          "constructions": [
+            {"type": "Ablativus absolutus (mit quamquam)", "start": 2, "end": 4, "color": "#FFD700", "explanation": "quamquam nondum periculo appropinquante: obwohl die Gefahr noch nicht nahte – Abl. abs. mit Konzessivkonjunktion"}
+          ],
+          "stylistic_devices": [
+            {"name": "Antithese (nondum – tamen)", "function": "Noch nicht – aber dennoch: die Gefahr ist latent"}
+          ]
+        },
+        {
+          "id": "s6_2",
+          "latin": "Quo tunc avunculus meus secundissimo invectus complectitur trepidantem, consolatur, hortatur, utque timorem eius sua securitate leniret, deferri in balneum iubet; lotus accubat, cenat aut hilaris aut, quod aeque magnum, similis hilari.",
+          "german": "Geradewegs dorthinein fuhr damals mein Onkel mit sehr günstigem Wind, er umarmt den Zitternden, tröstet ihn, muntert ihn auf und lässt sich, damit er dessen Furcht durch seine eigene Sorglosigkeit mildert, ins Bad tragen; gewaschen legt er sich zu Tische, speist entweder heiter oder – was gleichermaßen groß ist – einem Heiteren ähnlich.",
+          "keywords": ["Onkel", "günstigem", "Wind", "umarmt", "Zitternden", "tröstet", "Sorglosigkeit", "Bad", "heiter"],
+          "constructions": [
+            {"type": "PPA (PC)", "start": 4, "end": 4, "color": "#FF6B00", "explanation": "trepidantem: den Zitternden – PPA zu implizitem Pomponianus"},
+            {"type": "ut-Satz", "start": 8, "end": 12, "color": "#00FFFF", "explanation": "utque timorem leniret: damit er die Furcht mildere (Finalsatz)"},
+            {"type": "PPP", "start": 14, "end": 14, "color": "#00FF88", "explanation": "lotus: gewaschen (PPP von lavare)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Asyndeton (complectitur, consolatur, hortatur)", "function": "drei Verben ohne Konjunktion: Tatkraft des Plinius"},
+            {"name": "Antithese (timorem eius – sua securitate)", "function": "seine Furcht vs. Plinius' Sorglosigkeit"},
+            {"name": "Chiasmus (aut hilaris aut similis hilari)", "function": "echter Mut oder gleichwertiger Gleichmut"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Teil VII",
+      "subtitle": "Die letzten Stunden",
+      "boss_name": "THE INFERNO",
+      "boss_emoji": "🔥",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s7_1",
+          "latin": "Interim e Vesuvio monte pluribus locis latissimae flammae altaque incendia relucebant, quorum fulgor et claritas tenebris noctis excitabatur.",
+          "german": "Inzwischen leuchteten vom Vesuv an mehreren Orten sehr weite Flammenherde und hohe Brände auf, deren leuchtender Schein durch die Dunkelheit der Nacht gesteigert wurde.",
+          "keywords": ["Vesuv", "Flammenherde", "Brände", "leuchteten", "Schein", "Dunkelheit", "Nacht"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name": "Hendiadyoin (fulgor et claritas)", "function": "zwei Wörter für einen Begriff: der leuchtende Glanz"}
+          ]
+        },
+        {
+          "id": "s7_2",
+          "latin": "Ille agrestium trepidatione ignes relictos esse desertasque villas esse et per solitudinem ardere in remedium formidinis dictitabat.",
+          "german": "Jener sagte immer wieder als Heilmittel gegen die Furcht, dass wegen der Ratlosigkeit der Bauern Herdfeuer zurückgelassen und Landhäuser verlassen worden seien und nun durch die Abgeschiedenheit brannten.",
+          "keywords": ["Heilmittel", "Furcht", "Bauern", "Herdfeuer", "Landhäuser", "verlassen", "brannten"],
+          "constructions": [
+            {"type": "AcI", "start": 2, "end": 10, "color": "#00FF88", "explanation": "ignes relictos esse desertasque villas esse ardere: mehrfacher AcI nach 'dictitabat'"},
+            {"type": "Genitivus obiectivus", "start": 12, "end": 12, "color": "#FF00FF", "explanation": "formidinis: Angst – Genitiv des Objekts bei 'remedium'"}
+          ],
+          "stylistic_devices": [
+            {"name": "dictitabat (Iterativum)", "function": "immer wieder sagen: Plinius beruhigt pausenlos"}
+          ]
+        },
+        {
+          "id": "s7_3",
+          "latin": "Tum se quieti dedit et quievit verissimo quidem somno; nam meatus animae, qui illi propter amplitudinem corporis gravior et sonantior erat, ab iis, qui limini obversabantur, audiebatur.",
+          "german": "Dann begab er sich zur Ruhe und ruhte tatsächlich in einem sehr tiefen Schlaf; denn die Atemzüge, die bei jenem wegen der Fülle seines Körpers tiefer und lauter waren, wurden von denen, die sich vor der Schwelle aufhielten, gehört.",
+          "keywords": ["Ruhe", "tiefen", "Schlaf", "Atemzüge", "lauter", "Schwelle", "gehört"],
+          "constructions": [
+            {"type": "Dativus finalis", "start": 2, "end": 2, "color": "#FF6B00", "explanation": "quieti: zur Ruhe – Dativ des Zwecks"},
+            {"type": "Dativus possessoris", "start": 8, "end": 8, "color": "#FFD700", "explanation": "illi: bei jenem – Dativ des Besitzers ('qui illi... erat')"}
+          ],
+          "stylistic_devices": [
+            {"name": "Ironie/Paradoxon", "function": "Inmitten der Katastrophe schläft Plinius tief – stoische Unerschrockenheit"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Teil VIII",
+      "subtitle": "Ein letzter Fluchtversuch",
+      "boss_name": "THE CRUMBLING WALLS",
+      "boss_emoji": "🏚️",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s8_1",
+          "latin": "Sed area, ex qua diaeta adibatur, ita iam cinere mixtisque pumicibus oppleta surrexerat, ut, si longior in cubiculo mora esset, exitus negaretur.",
+          "german": "Aber der Hof, von welchem aus man das Zimmer aufsuchen konnte, war bereits so mit Asche und Bimssteinen angefüllt, dass, falls der Aufenthalt im Schlafzimmer noch länger wäre, der Ausgang verwehrt würde.",
+          "keywords": ["Hof", "Zimmer", "Asche", "Bimssteinen", "angefüllt", "Aufenthalt", "Ausgang", "verwehrt"],
+          "constructions": [
+            {"type": "Irrealis der Gegenwart", "start": 12, "end": 15, "color": "#FF0000", "explanation": "si mora esset, exitus negaretur: Konjunktiv Imperfekt – irreale Bedingung"}
+          ],
+          "stylistic_devices": [
+            {"name": "ut-Satz konsekutiv (ita... ut)", "function": "So sehr angefüllt, dass... – Folge der Ascheschicht"}
+          ]
+        },
+        {
+          "id": "s8_2",
+          "latin": "In commune consultant, intra tecta subsistant an in aperto vagentur.",
+          "german": "Gemeinsam beratschlagen sie, ob sie im Haus bleiben sollen oder im Freien umherlaufen sollen.",
+          "keywords": ["Gemeinsam", "beratschlagen", "Haus", "bleiben", "Freien", "umherlaufen"],
+          "constructions": [
+            {"type": "indirekter Fragesatz", "start": 3, "end": 7, "color": "#FF00FF", "explanation": "subsistant an vagentur: ob... oder... (Doppelfrage, Konj. Präsens)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Alliteration (In commune consultant)", "function": "Alle beraten gemeinsam: keine Führungsperson"},
+            {"name": "Parallelismus (intra tecta – in aperto)", "function": "beide Optionen gleich gefährlich"}
+          ]
+        },
+        {
+          "id": "s8_3",
+          "latin": "apud illum quidem ratio rationem, apud alios timorem timor vicit.",
+          "german": "Bei jenem besiegte freilich ein vernünftiger Grund den anderen; bei den anderen eine Furcht die andere.",
+          "keywords": ["vernünftiger", "Grund", "besiegte", "Furcht", "anderen"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name": "Chiasmus (ratio rationem – timorem timor)", "function": "Plinius rational, die anderen panisch: klarer Kontrast"},
+            {"name": "Polyptoton (ratio rationem / timorem timor)", "function": "gleiche Wörter im Kasus-Wechsel: verstärkt den Kontrast"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Teil IX",
+      "subtitle": "Es bleibt Nacht",
+      "boss_name": "THE ETERNAL DARKNESS",
+      "boss_emoji": "🌑",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s9_1",
+          "latin": "Iam dies alibi, illic nox omnium noctium nigrior densiorque; quam tamen faces multae variaque lumina solvebant.",
+          "german": "Schon war es woanders wieder Tag, dort aber Nacht, schwärzer und dichter als alle Nächte; diese erhellten dennoch viele Fackeln und verschiedene Lichter.",
+          "keywords": ["woanders", "Tag", "Nacht", "schwärzer", "dichter", "Fackeln", "Lichter", "erhellten"],
+          "constructions": [
+            {"type": "Komparativ", "start": 5, "end": 5, "color": "#00FFFF", "explanation": "nigrior: schwärzer (Komparativ von niger)"},
+            {"type": "Komparativ", "start": 6, "end": 6, "color": "#00FFFF", "explanation": "densiorque: und dichter (Komparativ von densus)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Antithese (dies alibi – illic nox)", "function": "Tag dort, Nacht hier: Ausnahmezustand"},
+            {"name": "Polyptoton (nox omnium noctium)", "function": "Nacht aller Nächte: Hyperbel der Finsternis"},
+            {"name": "Anapher (Iam... quam tamen)", "function": "Wechsel: erst Dunkel, dann Licht"}
+          ]
+        },
+        {
+          "id": "s9_2",
+          "latin": "Ibi super abiectum linteum recubans semel atque iterum frigidam aquam poposcit hausitque.",
+          "german": "Während er sich dort auf ein ausgebreitetes Leintuch auf den Rücken legte, forderte er einmal und wieder frisches Wasser und trank es.",
+          "keywords": ["ausgebreitetes", "Leintuch", "Rücken", "forderte", "Wasser", "trank"],
+          "constructions": [
+            {"type": "PPP (PC)", "start": 2, "end": 2, "color": "#00FF88", "explanation": "abiectum: ausgebreitet – PPP als Attribut zu linteum"},
+            {"type": "PPA (PC)", "start": 3, "end": 3, "color": "#FF6B00", "explanation": "recubans: sich legend – PPA zu implizitem Subjekt (er)"}
+          ],
+          "stylistic_devices": [
+            {"name": "Stoische Ruhe", "function": "Inmitten der Katastrophe legt er sich hin und trinkt – totale Gelassenheit"}
+          ]
+        },
+        {
+          "id": "s9_3",
+          "latin": "Deinde flammae flammarumque praenuntius odor sulphuris alios in fugam vertunt, excitant illum.",
+          "german": "Da treiben Flammen und der Vorbote der Flammen, der Geruch von Schwefel, die anderen in die Flucht, jenen schrecken sie auf.",
+          "keywords": ["Flammen", "Vorbote", "Schwefel", "anderen", "Flucht", "schrecken", "auf"],
+          "constructions": [
+            {"type": "Genitivus obiectivus", "start": 1, "end": 1, "color": "#FF00FF", "explanation": "flammarumque: der Flammen – Genitivus obiectivus bei praenuntius"}
+          ],
+          "stylistic_devices": [
+            {"name": "Polyptoton (flammae flammarumque)", "function": "Feuer – Feuer: intensiviert die Bedrohung"},
+            {"name": "Personifikation (praenuntius)", "function": "Der Geruch als 'Vorbote': dramatische Ankündigung"},
+            {"name": "Chiasmus (alios...vertunt, excitant illum)", "function": "die anderen – er: gegensätzliche Reaktionen"}
+          ]
+        },
+        {
+          "id": "s9_4",
+          "latin": "Innitens servolis duobus assurrexit et statim concidit, ut ego colligo, crassiore caligine spiritu obstructo clausoque stomacho, qui illi natura invalidus et angustus et frequenter aestuans erat.",
+          "german": "Sich auf zwei kleine Sklaven stützend erhob er sich und brach sofort wieder zusammen, wie ich vermute, weil der ziemlich dichte Dunst ihm den Atem abgeschnitten und seine Luftröhre verschlossen hatte, welche bei jenem von Natur aus schwach und eng und häufig trocken war.",
+          "keywords": ["Sklaven", "stützend", "erhob", "zusammenbrach", "Dunst", "Atem", "abgeschnitten", "Luftröhre"],
+          "constructions": [
+            {"type": "PPA (PC)", "start": 0, "end": 2, "color": "#FF6B00", "explanation": "Innitens servolis duobus: sich auf zwei Sklaven stützend – PPA"},
+            {"type": "Ablativus absolutus", "start": 8, "end": 9, "color": "#FFD700", "explanation": "spiritu obstructo: da der Atem abgeschnitten war – Abl. Abs."},
+            {"type": "Ablativus absolutus", "start": 10, "end": 11, "color": "#FFD700", "explanation": "clausoque stomacho: und die Luftröhre verschlossen – Abl. Abs."}
+          ],
+          "stylistic_devices": [
+            {"name": "ut = wie (Indikativ!)", "function": "ut ego colligo: wie ich vermute – kein Konjunktiv, da direkte Einschätzung des Autors"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Teil X",
+      "subtitle": "Das traurige Ende",
+      "boss_name": "FINIS",
+      "boss_emoji": "💀",
+      "unlock_threshold": 70,
+      "sentences": [
+        {
+          "id": "s10_1",
+          "latin": "Ubi dies redditus est – is ab eo, quem novissime viderat, tertius erat – corpus inventum est integrum, inlaesum opertumque, ut fuerat indutus; habitus corporis quiescenti quam defuncto similior.",
+          "german": "Sobald der Tag zurückgekehrt war – dieser war vom letzten (Tag), den er erlebt hatte, der dritte – fand man seine Leiche unversehrt und unverletzt und zugedeckt, so wie er gekleidet gewesen war; das Erscheinungsbild seines Körpers glich mehr einem Ruhenden als einem Toten.",
+          "keywords": ["Tag", "dritte", "Leiche", "unversehrt", "unverletzt", "zugedeckt", "Ruhenden", "Toten"],
+          "constructions": [
+            {"type": "PPP", "start": 9, "end": 9, "color": "#00FF88", "explanation": "inventum (est): gefunden wurde – PPP"},
+            {"type": "PPP", "start": 10, "end": 10, "color": "#00FF88", "explanation": "integrum: unversehrt – PPP"},
+            {"type": "PPP", "start": 11, "end": 11, "color": "#00FF88", "explanation": "inlaesum: unverletzt – PPP"},
+            {"type": "PPP", "start": 12, "end": 12, "color": "#00FF88", "explanation": "opertum: bedeckt – PPP"},
+            {"type": "Dativ (Bezug)", "start": 15, "end": 15, "color": "#FF6B00", "explanation": "quiescenti/defuncto: Dativ bei similior"}
+          ],
+          "stylistic_devices": [
+            {"name": "Alliteration/Homoioteleuton (integrum, inlaesum)", "function": "Klang verstärkt Eindruck der Unversehrtheit"},
+            {"name": "Antithese (quiescenti – defuncto)", "function": "Schlafend statt tot: stoische Würde im Tod"}
+          ]
+        },
+        {
+          "id": "s10_2",
+          "latin": "Unum adiciam: omnia me, quibus interfueram quaeque statim, cum maxime vera memorantur, audieram, persecuturum esse.",
+          "german": "Eines werde ich noch hinzufügen: dass ich allem, bei dem ich selbst dabei gewesen war und was ich sofort, wenn der wirkliche Vorgang noch frisch in Erinnerung ist, gehört hatte, beharrlich nachgegangen bin.",
+          "keywords": ["hinzufügen", "dabei", "gewesen", "frisch", "Erinnerung", "beharrlich", "nachgegangen"],
+          "constructions": [
+            {"type": "AcI", "start": 2, "end": 10, "color": "#00FF88", "explanation": "omnia me... persecuturum esse: AcI nach 'adiciam' (futurisch)"}
+          ],
+          "stylistic_devices": []
+        },
+        {
+          "id": "s10_3",
+          "latin": "Tu potissima excerpes; aliud est enim epistulam, aliud historiam, aliud amico, aliud omnibus scribere. Vale.",
+          "german": "Du wirst das Wichtigste herausgreifen; denn es ist etwas anderes, einen Brief an einen Freund als Geschichte für alle zu schreiben. Leb wohl!",
+          "keywords": ["Wichtigste", "herausgreifen", "Brief", "Freund", "Geschichte", "alle", "Leb wohl"],
+          "constructions": [],
+          "stylistic_devices": [
+            {"name": "Anapher (aliud... aliud... aliud... aliud)", "function": "Brief vs. Geschichte: Plinius schmeichelt Tacitus"},
+            {"name": "Antithese (amico – omnibus)", "function": "Freund vs. alle: unterschiedliche Öffentlichkeit"}
+          ]
+        }
+      ]
+    }
+  ]
+}
